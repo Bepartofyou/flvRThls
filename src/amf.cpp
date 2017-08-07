@@ -858,7 +858,7 @@ void amf_data_dump(FILE * stream, const amf_data * data, int indent_level) {
     }
 }
 
-static void amf_data_dump_hls_ex(std::vector<double>& keyframePos, std::vector<double>& keyframeTs, const amf_data * data, int indent_level, std::string arraystr) {
+void amf_data_dump_hls_ex(std::vector<double>& keyframePos, std::vector<double>& keyframeTs, const amf_data * data, int indent_level, std::string arraystr) {
 	if (data != NULL) {
 		amf_node * node;
 		time_t time;

@@ -413,7 +413,7 @@ int main(int argc, char ** argv) {
 
 	/* flvmeta default options */
 	static flvmeta_opts options;
-	options.command = FLVMETA_DUMP_COMMAND;
+	options.command = FLVMETA_FULL_DUMP_COMMAND;
 	options.input_file = argv[1];
 	options.output_file = NULL;
 	options.metadata = NULL;
@@ -426,7 +426,7 @@ int main(int argc, char ** argv) {
 	options.all_keyframes = 0;
 	options.preserve_metadata = 0;
 	options.error_handling = FLVMETA_EXIT_ON_ERROR;
-	options.dump_format = FLVMETA_FORMAT_HLS;
+	options.dump_format = FLVMETA_FORMAT_RAW;
 	options.verbose = 0;
 	options.metadata_event = NULL;
 

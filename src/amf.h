@@ -25,7 +25,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+
 #include <list>
+#include <string>
 #include <vector>
 
 #include "types.h"
@@ -151,6 +153,7 @@ void       amf_data_dump(FILE * stream, const amf_data * data, int indent_level)
 
 /* dump AMF data into a stream as text */  ///  HLS
 void       amf_data_dump_hls(std::vector<double>& keyframePos, std::vector<double>& keyframeTs, const amf_data * data, int indent_level);
+void	   amf_data_dump_hls_ex(std::vector<double>& keyframePos, std::vector<double>& keyframeTs, const amf_data * data, int indent_level, std::string arraystr);
 
 /* return a null AMF object with the specified error code attached to it */
 amf_data * amf_data_error(byte error_code);
