@@ -170,7 +170,32 @@ int dump_hls_file(flv_parser * parser, const flvmeta_opts * options) {
 }
 
 int dump_hls_amf_data(const amf_data * data) {
-	amf_data_dump_hls(stdout, data, 0);
+	std::vector<double> keyframePos;
+	std::vector<double> keyframeTs;
+
+	FILE* fp = fopen("test.m3u8", "wb");
+
+	fwrite("#EXTM3U\n", strlen("#EXTM3U\n"), 1, fp);
+	fwrite("#EXT-X-VERSION:3\n", strlen("#EXT-X-VERSION:3\n"), 1, fp);
+	fwrite("#EXT-X-TARGETDURATION:12\n", strlen("#EXT-X-TARGETDURATION:12\n"), 1, fp);
+	fwrite("#EXT-X-MEDIA-SEQUENCE:0\n", strlen("#EXT-X-MEDIA-SEQUENCE:0\n"), 1, fp);
+	fwrite("#EXTINF:6.000000,\n", strlen("#EXTINF:6.000000,\n"), 1, fp);
+	fwrite("test-0000.ts\n", strlen("test-0000.ts\n"), 1, fp);
+	fwrite("#EXT-X-ENDLIST", strlen("#EXT-X-ENDLIST"), 1, fp);
+
+	fclose(fp);
+
+	double target_duration = 0;
+
+	printf("vector size:%d,%d\n", keyframePos.size(), keyframeTs.size());
+	amf_data_dump_hls(keyframePos, keyframeTs, data, 0);
+	printf("vector size:%d,%d\n", keyframePos.size(), keyframeTs.size());
+
+	//for (int i = 0; i < keyframePos.size(); i++)
+	//	printf("index:%d, pos:%d\n", i, (uint32_t)keyframePos[i]);
+	//for (int i = 0; i < keyframeTs.size(); i++)
+	//	printf("index:%d, time:%lf\n", i, keyframeTs[i]);
+
 	printf("\n");
 	return OK;
 }

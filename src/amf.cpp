@@ -20,8 +20,9 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 */
 #include <string.h>
-
 #include "amf.h"
+
+//#define  PRINT_FLAG
 
 /* function common to all array types */
 static void amf_list_init(amf_list * list) {
@@ -857,9 +858,7 @@ void amf_data_dump(FILE * stream, const amf_data * data, int indent_level) {
     }
 }
 
-
-/* dump AMF data into a stream as text */
-void amf_data_dump_hls(FILE * stream, const amf_data * data, int indent_level) {
+static void amf_data_dump_hls_ex(std::vector<double>& keyframePos, std::vector<double>& keyframeTs, const amf_data * data, int indent_level, std::string arraystr) {
 	if (data != NULL) {
 		amf_node * node;
 		time_t time;
@@ -867,64 +866,309 @@ void amf_data_dump_hls(FILE * stream, const amf_data * data, int indent_level) {
 		char datestr[128];
 		switch (data->type) {
 		case AMF_TYPE_NUMBER:
-			fprintf(stream, "%.12g", data->number_data);
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%.12g", data->number_data);
+			printf("%.12g", data->number_data);
+#endif
+
+			if (!strcmp(arraystr.c_str(), "filepositions"))
+				keyframePos.push_back(data->number_data);
+			else if (!strcmp(arraystr.c_str(), "times"))
+				keyframeTs.push_back(data->number_data);
+
 			break;
 		case AMF_TYPE_BOOLEAN:
-			fprintf(stream, "%s", (data->boolean_data) ? "true" : "false");
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%s", (data->boolean_data) ? "true" : "false");
+			printf("%s", (data->boolean_data) ? "true" : "false");
+#endif
 			break;
 		case AMF_TYPE_STRING:
-			fprintf(stream, "\'%.*s\'", data->string_data.size, data->string_data.mbstr);
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "\'%.*s\'", data->string_data.size, data->string_data.mbstr);
+			printf("\'%.*s\'", data->string_data.size, data->string_data.mbstr);
+#endif
 			break;
 		case AMF_TYPE_OBJECT:
 			node = amf_object_first(data);
-			fprintf(stream, "{\n");
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "{\n");
+			printf("{\n");
+#endif
 			while (node != NULL) {
-				fprintf(stream, "%*s", (indent_level + 1) * 4, "");
-				amf_data_dump(stream, amf_object_get_name(node), indent_level + 1);
-				fprintf(stream, ": ");
-				amf_data_dump(stream, amf_object_get_data(node), indent_level + 1);
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "%*s", (indent_level + 1) * 4, "");
+				printf("%*s", (indent_level + 1) * 4, "");
+#endif
+				amf_data_dump_hls(keyframePos, keyframeTs, amf_object_get_name(node), indent_level + 1);
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, ": ");
+				printf(": ");
+#endif
+				amf_data_dump_hls(keyframePos, keyframeTs, amf_object_get_data(node), indent_level + 1);
 				node = amf_object_next(node);
-				fprintf(stream, "\n");
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "\n");
+				printf("\n");
+#endif
 			}
-			fprintf(stream, "%*s", indent_level * 4 + 1, "}");
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%*s", indent_level * 4 + 1, "}");
+			printf("%*s", indent_level * 4 + 1, "}");
+#endif
 			break;
 		case AMF_TYPE_NULL:
-			fprintf(stream, "null");
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "null");
+			printf("null");
+#endif
 			break;
 		case AMF_TYPE_UNDEFINED:
-			fprintf(stream, "undefined");
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "undefined");
+			printf("undefined");
+#endif
 			break;
 			/*case AMF_TYPE_REFERENCE:*/
 		case AMF_TYPE_ASSOCIATIVE_ARRAY:
 			node = amf_associative_array_first(data);
-			fprintf(stream, "{\n");
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "{\n");
+			printf("{\n");
+#endif
 			while (node != NULL) {
-				fprintf(stream, "%*s", (indent_level + 1) * 4, "");
-				amf_data_dump(stream, amf_associative_array_get_name(node), indent_level + 1);
-				fprintf(stream, " => ");
-				amf_data_dump(stream, amf_associative_array_get_data(node), indent_level + 1);
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "%*s", (indent_level + 1) * 4, "");
+				printf("%*s", (indent_level + 1) * 4, "");
+#endif
+				amf_data_dump_hls(keyframePos, keyframeTs, amf_associative_array_get_name(node), indent_level + 1);
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, " => ");
+				printf(" => ");
+#endif
+				amf_data_dump_hls(keyframePos, keyframeTs, amf_associative_array_get_data(node), indent_level + 1);
 				node = amf_associative_array_next(node);
-				fprintf(stream, "\n");
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "\n");
+				printf("\n");
+#endif
 			}
-			fprintf(stream, "%*s", indent_level * 4 + 1, "}");
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%*s", indent_level * 4 + 1, "}");
+			printf("%*s", indent_level * 4 + 1, "}");
+#endif
 			break;
 		case AMF_TYPE_ARRAY:
 			node = amf_array_first(data);
-			fprintf(stream, "[\n");
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "[\n");
+			printf("[\n");
+#endif
 			while (node != NULL) {
-				fprintf(stream, "%*s", (indent_level + 1) * 4, "");
-				amf_data_dump(stream, node->data, indent_level + 1);
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "%*s", (indent_level + 1) * 4, "");
+				printf("%*s", (indent_level + 1) * 4, "");
+#endif
+				amf_data_dump_hls(keyframePos, keyframeTs, node->data, indent_level + 1);
 				node = amf_array_next(node);
-				fprintf(stream, "\n");
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "\n");
+				printf("\n");
+#endif
 			}
-			fprintf(stream, "%*s", indent_level * 4 + 1, "]");
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%*s", indent_level * 4 + 1, "]");
+			printf("%*s", indent_level * 4 + 1, "]");
+#endif
 			break;
 		case AMF_TYPE_DATE:
 			time = amf_date_to_time_t(data);
 			tzset();
 			t = localtime(&time);
 			strftime(datestr, sizeof(datestr), "%a, %d %b %Y %H:%M:%S %z", t);
-			fprintf(stream, "%s", datestr);
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%s", datestr);
+			printf("%s", datestr);
+#endif
+			break;
+			/*case AMF_TYPE_SIMPLEOBJECT:*/
+		case AMF_TYPE_XML: break;
+		case AMF_TYPE_CLASS: break;
+		default: break;
+		}
+	}
+}
+
+/* dump AMF data into a stream as text */
+void amf_data_dump_hls(std::vector<double>& keyframePos, std::vector<double>& keyframeTs, const amf_data * data, int indent_level) {
+	if (data != NULL) {
+		static std::string arraystr = "";
+
+		amf_node * node;
+		time_t time;
+		struct tm * t;
+		char datestr[128];
+		switch (data->type) {
+		case AMF_TYPE_NUMBER:
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%.12g", data->number_data);
+			printf("%.12g", data->number_data);
+#endif
+			break;
+		case AMF_TYPE_BOOLEAN:
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%s", (data->boolean_data) ? "true" : "false");
+			printf("%s", (data->boolean_data) ? "true" : "false");
+#endif
+			break;
+		case AMF_TYPE_STRING:
+			if (!strcmp((char*)data->string_data.mbstr, "filepositions") || !strcmp((char*)data->string_data.mbstr, "times"))
+				arraystr = (char*)data->string_data.mbstr;
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "\'%.*s\'", data->string_data.size, data->string_data.mbstr);
+			printf("\'%.*s\'", data->string_data.size, data->string_data.mbstr);
+#endif
+			break;
+		case AMF_TYPE_OBJECT:
+			node = amf_object_first(data);
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "{\n");
+			printf("{\n");
+#endif
+			while (node != NULL) {
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "%*s", (indent_level + 1) * 4, "");
+				printf("%*s", (indent_level + 1) * 4, "");
+#endif
+				amf_data_dump_hls(keyframePos, keyframeTs, amf_object_get_name(node), indent_level + 1);
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, ": ");
+				printf(": ");
+#endif
+				amf_data_dump_hls(keyframePos, keyframeTs, amf_object_get_data(node), indent_level + 1);
+				node = amf_object_next(node);
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "\n");
+				printf("\n");
+#endif
+			}
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%*s", indent_level * 4 + 1, "}");
+			printf("%*s", indent_level * 4 + 1, "}");
+#endif
+			break;
+		case AMF_TYPE_NULL:
+#ifdef PRINT_FLAG
+			//fprintf(stream, "null");
+			printf("null");
+#endif
+			break;
+		case AMF_TYPE_UNDEFINED:
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "undefined");
+			printf("undefined");
+			break;
+#endif
+			/*case AMF_TYPE_REFERENCE:*/
+		case AMF_TYPE_ASSOCIATIVE_ARRAY:
+			node = amf_associative_array_first(data);
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "{\n");
+			printf("{\n");
+#endif
+			while (node != NULL) {
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "%*s", (indent_level + 1) * 4, "");
+				printf("%*s", (indent_level + 1) * 4, "");
+#endif
+				amf_data_dump_hls(keyframePos, keyframeTs, amf_associative_array_get_name(node), indent_level + 1);
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, " => ");
+				printf(" => ");
+#endif
+				amf_data_dump_hls(keyframePos, keyframeTs, amf_associative_array_get_data(node), indent_level + 1);
+				node = amf_associative_array_next(node);
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "\n");
+				printf("\n");
+#endif
+			}
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%*s", indent_level * 4 + 1, "}");
+			printf("%*s", indent_level * 4 + 1, "}");
+#endif
+			break;
+		case AMF_TYPE_ARRAY:
+			node = amf_array_first(data);
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "[\n");
+			printf("[\n");
+#endif
+			while (node != NULL) {
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "%*s", (indent_level + 1) * 4, "");
+				printf("%*s", (indent_level + 1) * 4, "");
+#endif
+				amf_data_dump_hls_ex(keyframePos, keyframeTs, node->data, indent_level + 1, arraystr);
+				node = amf_array_next(node);
+
+#ifdef PRINT_FLAG
+				//fprintf(stream, "\n");
+				printf("\n");
+#endif
+			}
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%*s", indent_level * 4 + 1, "]");
+			printf("%*s", indent_level * 4 + 1, "]");
+#endif
+			break;
+		case AMF_TYPE_DATE:
+			time = amf_date_to_time_t(data);
+			tzset();
+			t = localtime(&time);
+			strftime(datestr, sizeof(datestr), "%a, %d %b %Y %H:%M:%S %z", t);
+
+#ifdef PRINT_FLAG
+			//fprintf(stream, "%s", datestr);
+			printf("%s", datestr);
+#endif
 			break;
 			/*case AMF_TYPE_SIMPLEOBJECT:*/
 		case AMF_TYPE_XML: break;

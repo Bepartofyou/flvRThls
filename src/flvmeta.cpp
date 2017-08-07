@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <list>
+#include <vector>
 
 #include "flvmeta.h"
 #include "check.h"

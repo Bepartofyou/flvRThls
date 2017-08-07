@@ -23,6 +23,22 @@
 #define __DUMP_HLS_H__
 
 #include "flvmeta.h"
+#include <list>
+#include <vector>
+
+
+
+typedef struct HLSSegment {
+	char filename[1024];
+	//char sub_filename[1024];
+	double duration; /* in seconds */
+	int64_t pos;
+	int64_t size;
+
+	struct HLSSegment *next;
+} HLSSegment;
+
+
 
 #ifdef __cplusplus
 extern "C" {
