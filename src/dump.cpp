@@ -172,19 +172,27 @@ int dump_metadata(const flvmeta_opts * options) {
 }
 
 /* dump the full contents of an FLV file */
-int dump_flv_file(const flvmeta_opts * options) {
-    flv_parser parser;
-    memset(&parser, 0, sizeof(flv_parser));
+int dump_flv_file(const flvmeta_opts * options, flv_parser * parser) {
+    //flv_parser parser;
+    //memset(&parser, 0, sizeof(flv_parser));
 
     switch (options->dump_format) {
         case FLVMETA_FORMAT_JSON:
-            return dump_json_file(&parser, options);
+            //return dump_json_file(&parser, options);
+			return dump_json_file(parser, options);
         case FLVMETA_FORMAT_RAW:
-            return dump_raw_file(&parser, options);
+            //return dump_raw_file(&parser, options);
+			return dump_raw_file(parser, options);
         case FLVMETA_FORMAT_XML:
-            return dump_xml_file(&parser, options);
+            //return dump_xml_file(&parser, options);
+			return dump_xml_file(parser, options);
         case FLVMETA_FORMAT_YAML:
-            return dump_yaml_file(&parser, options);
+            //return dump_yaml_file(&parser, options);
+			return dump_yaml_file(parser, options);
+			////
+		case FLVMETA_FORMAT_HLS:
+			//return dump_hls_file_ex(&parser, options);
+			return dump_hls_file_ex(parser, options);
         default:
             return OK;
     }

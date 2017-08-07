@@ -25,9 +25,9 @@
 #include <stdio.h>
 #include <string.h>
 
-/* raw FLV file full dump callbacks */
+/* hls FLV file full dump callbacks */
 
-static int raw_on_header(flv_header * header, flv_parser * parser) {
+static int hls_on_header(flv_header * header, flv_parser * parser) {
     int * n;
 
     n = (int*) malloc(sizeof(uint32));
@@ -46,7 +46,7 @@ static int raw_on_header(flv_header * header, flv_parser * parser) {
     return OK;
 }
 
-static int raw_on_tag(flv_tag * tag, flv_parser * parser) {
+static int hls_on_tag(flv_tag * tag, flv_parser * parser) {
     int * n;
 
     /* increment current tag number */
@@ -62,7 +62,7 @@ static int raw_on_tag(flv_tag * tag, flv_parser * parser) {
     return OK;
 }
 
-static int raw_on_video_tag(flv_tag * tag, flv_video_tag vt, flv_parser * parser) {
+static int hls_on_video_tag(flv_tag * tag, flv_video_tag vt, flv_parser * parser) {
     printf("* Video codec: %s\n", dump_string_get_video_codec(vt));
     printf("* Video frame type: %s\n", dump_string_get_video_frame_type(vt));
 
@@ -92,7 +92,7 @@ static int raw_on_video_tag(flv_tag * tag, flv_video_tag vt, flv_parser * parser
     return OK;
 }
 
-static int raw_on_audio_tag(flv_tag * tag, flv_audio_tag at, flv_parser * parser) {
+static int hls_on_audio_tag(flv_tag * tag, flv_audio_tag at, flv_parser * parser) {
     printf("* Sound type: %s\n", dump_string_get_sound_type(at));
     printf("* Sound size: %s\n", dump_string_get_sound_size(at));
     printf("* Sound rate: %s\n", dump_string_get_sound_rate(at));
@@ -113,7 +113,7 @@ static int raw_on_audio_tag(flv_tag * tag, flv_audio_tag at, flv_parser * parser
     return OK;
 }
 
-static int raw_on_metadata_tag(flv_tag * tag, amf_data * name, amf_data * data, flv_parser * parser) {
+static int hls_on_metadata_tag(flv_tag * tag, amf_data * name, amf_data * data, flv_parser * parser) {
     printf("* Metadata event name: %s\n", amf_string_get_bytes(name));
     printf("* Metadata contents: ");
     amf_data_dump(stdout, data, 0);
@@ -121,18 +121,18 @@ static int raw_on_metadata_tag(flv_tag * tag, amf_data * name, amf_data * data, 
     return OK;
 }
 
-static int raw_on_prev_tag_size(uint32 size, flv_parser * parser) {
+static int hls_on_prev_tag_size(uint32 size, flv_parser * parser) {
     printf("Previous tag size: %u\n", size);
     return OK;
 }
 
-static int raw_on_stream_end(flv_parser * parser) {
+static int hls_on_stream_end(flv_parser * parser) {
     free(parser->user_data);
     return OK;
 }
 
-/* raw FLV file metadata dump callback */
-static int raw_on_metadata_tag_only(flv_tag * tag, amf_data * name, amf_data * data, flv_parser * parser) {
+/* hls FLV file metadata dump callback */
+static int hls_on_metadata_tag_only(flv_tag * tag, amf_data * name, amf_data * data, flv_parser * parser) {
     flvmeta_opts * options = (flvmeta_opts*) parser->user_data;
 
     if (options->metadata_event == NULL) {
@@ -153,20 +153,38 @@ static int raw_on_metadata_tag_only(flv_tag * tag, amf_data * name, amf_data * d
 
 void dump_hls_setup_metadata_dump(flv_parser * parser) {
     if (parser != NULL) {
-        parser->on_metadata_tag = raw_on_metadata_tag_only;
+		parser->on_metadata_tag = hls_on_metadata_tag_only;
     }
 }
 
 int dump_hls_file(flv_parser * parser, const flvmeta_opts * options) {
-    parser->on_header = raw_on_header;
-    parser->on_tag = raw_on_tag;
-    parser->on_audio_tag = raw_on_audio_tag;
-    parser->on_video_tag = raw_on_video_tag;
-    parser->on_metadata_tag = raw_on_metadata_tag;
-    parser->on_prev_tag_size = raw_on_prev_tag_size;
-    parser->on_stream_end = raw_on_stream_end;
+	parser->on_header = hls_on_header;
+	parser->on_tag = hls_on_tag;
+	parser->on_audio_tag = hls_on_audio_tag;
+	parser->on_video_tag = hls_on_video_tag;
+	parser->on_metadata_tag = hls_on_metadata_tag;
+	parser->on_prev_tag_size = hls_on_prev_tag_size;
+	parser->on_stream_end = hls_on_stream_end;
 
     return flv_parse(options->input_file, parser);
+}
+
+static void hls_get_av_config(flv_parser * parser, const flvmeta_opts * options) {
+	//parser->on_header = hls_on_header;
+	//parser->on_tag = hls_on_tag;
+	parser->on_audio_tag = hls_on_audio_tag;
+	parser->on_video_tag = hls_on_video_tag;
+	//parser->on_metadata_tag = hls_on_metadata_tag;
+	//parser->on_prev_tag_size = hls_on_prev_tag_size;
+	//parser->on_stream_end = hls_on_stream_end;
+}
+
+
+int dump_hls_file_ex(flv_parser * parser, const flvmeta_opts * options) {
+
+	hls_get_av_config(parser, options);
+
+	return flv_parse(options->input_file, parser);
 }
 
 int dump_hls_amf_data(const amf_data * data) {

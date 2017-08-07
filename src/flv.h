@@ -163,7 +163,31 @@ void flv_tag_set_timestamp(flv_tag * tag, uint32 timestamp);
 #define FLV_STREAM_STATE_TAG_BODY       2
 #define FLV_STREAM_STATE_PREV_TAG_SIZE  3
 
+typedef struct __flv_audio_config {
+	uint32 samplerate;
+	uint32 channels;
+	uint32 profile;
+	uint8 adts[7];
+
+} flv_audio_config;
+
+typedef struct __flv_video_config {
+	uint32 width;
+	uint32 height;
+	uint32 framerate;
+	uint8 sps[4096];
+	uint32 sps_size;
+	uint8 pps[4096];
+	uint32 pps_size;
+
+} flv_video_config;
+
 typedef struct __flv_stream {
+	bool flag_audioconfig;
+	bool flag_videoconfig;
+	flv_audio_config audioconfig;
+	flv_video_config videoconfig;
+
     FILE * flvin;
     uint8 state;
     flv_tag current_tag;
