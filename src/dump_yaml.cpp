@@ -461,7 +461,7 @@ int dump_yaml_file(flv_parser * parser, const flvmeta_opts * options) {
 
     parser->user_data = &emitter;
 
-    ret = flv_parse(options->input_file, parser);
+	ret = flv_parse(options->input_file, parser, 0);
 
     yaml_document_end_event_initialize(&event, 1);
     yaml_emitter_emit(&emitter, &event);

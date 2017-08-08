@@ -294,7 +294,7 @@ int dump_json_file(flv_parser * parser, const flvmeta_opts * options) {
     json_emit_init(&je);
     parser->user_data = &je;
 
-    return flv_parse(options->input_file, parser);
+	return flv_parse(options->input_file, parser, 0);
 }
 
 int dump_json_amf_data(const amf_data * data) {

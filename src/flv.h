@@ -207,6 +207,7 @@ int flv_read_metadata(flv_stream * stream, amf_data ** name, amf_data ** data);
 size_t flv_read_tag_body(flv_stream * stream, void * buffer, size_t buffer_size);
 file_offset_t flv_get_current_tag_offset(flv_stream * stream);
 file_offset_t flv_get_offset(flv_stream * stream);
+void flv_set_offset(flv_stream * stream, file_offset_t offset);
 void flv_reset(flv_stream * stream);
 void flv_close(flv_stream * stream);
 
@@ -233,7 +234,7 @@ typedef struct __flv_parser {
     int (* on_stream_end)(struct __flv_parser * parser);
 } flv_parser;
 
-int flv_parse(const char * file, flv_parser * parser);
+int flv_parse(const char * file, flv_parser * parser, file_offset_t offset);
 
 #ifdef __cplusplus
 }

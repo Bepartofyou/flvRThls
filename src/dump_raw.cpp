@@ -166,7 +166,7 @@ int dump_raw_file(flv_parser * parser, const flvmeta_opts * options) {
     parser->on_prev_tag_size = raw_on_prev_tag_size;
     parser->on_stream_end = raw_on_stream_end;
 
-    return flv_parse(options->input_file, parser);
+	return flv_parse(options->input_file, parser, 0);
 }
 
 int dump_raw_amf_data(const amf_data * data) {

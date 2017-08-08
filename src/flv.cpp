@@ -31,6 +31,8 @@ void flv_tag_set_timestamp(flv_tag * tag, uint32 timestamp) {
 /* FLV stream functions */
 flv_stream * flv_open(const char * file) {
     flv_stream * stream = (flv_stream *) malloc(sizeof(flv_stream));
+	memset(stream, 0, sizeof(flv_stream));
+
     if (stream == NULL) {
         return NULL;
     }
@@ -320,6 +322,15 @@ file_offset_t flv_get_offset(flv_stream * stream) {
     return (stream != NULL) ? lfs_ftell(stream->flvin) : 0;
 }
 
+void flv_set_offset(flv_stream * stream, file_offset_t offset) {
+
+	if (offset){
+
+		lfs_fseek(stream->flvin, offset, SEEK_SET);
+		stream->state = FLV_STREAM_STATE_TAG;
+	}
+}
+
 void flv_reset(flv_stream * stream) {
     /* go back to beginning of file */
     if (stream != NULL && stream->flvin != NULL) {
@@ -424,7 +435,7 @@ size_t flv_write_tag(FILE * out, const flv_tag * tag) {
 }
 
 /* FLV event based parser */
-int flv_parse(const char * file, flv_parser * parser) {
+int flv_parse(const char * file, flv_parser * parser, file_offset_t offset) {
     flv_header header;
     flv_tag tag;
     flv_audio_tag at;
@@ -442,19 +453,25 @@ int flv_parse(const char * file, flv_parser * parser) {
         return FLV_ERROR_OPEN_READ;
     }
 
-    retval = flv_read_header(parser->stream, &header);
-    if (retval != FLV_OK) {
-        flv_close(parser->stream);
-        return retval;
-    }
+	//set flv offset
+	flv_set_offset(parser->stream, offset);
 
-    if (parser->on_header != NULL) {
-        retval = parser->on_header(&header, parser);
-        if (retval != FLV_OK) {
-            flv_close(parser->stream);
-            return retval;
-        }
-    }
+	if (flv_get_offset(parser->stream) == 0)
+	{
+		retval = flv_read_header(parser->stream, &header);
+		if (retval != FLV_OK) {
+			flv_close(parser->stream);
+			return retval;
+		}
+
+		if (parser->on_header != NULL) {
+			retval = parser->on_header(&header, parser);
+			if (retval != FLV_OK) {
+				flv_close(parser->stream);
+				return retval;
+			}
+		}
+	}
 
     while (flv_read_tag(parser->stream, &tag) == FLV_OK) {
         if (parser->on_tag != NULL) {

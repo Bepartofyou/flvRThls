@@ -163,7 +163,7 @@ int dump_metadata(const flvmeta_opts * options) {
             break;
     }
 
-    retval = flv_parse(options->input_file, &parser);
+	retval = flv_parse(options->input_file, &parser, 0);
     if (retval == FLVMETA_DUMP_STOP_OK) {
         retval = FLV_OK;
     }

@@ -172,6 +172,10 @@ static void adts_header_generate(uint8_t *buf, int size, int pce_size, int chann
 }
 
 static int hls_on_audio_tag(flv_tag * tag, flv_audio_tag at, flv_parser * parser) {
+
+	if (parser->stream->flag_audioconfig)
+		return OK;
+
     printf("* Sound type: %s\n", dump_string_get_sound_type(at));
     printf("* Sound size: %s\n", dump_string_get_sound_size(at));
     printf("* Sound rate: %s\n", dump_string_get_sound_rate(at));
@@ -273,7 +277,7 @@ int dump_hls_file(flv_parser * parser, const flvmeta_opts * options) {
 	parser->on_prev_tag_size = hls_on_prev_tag_size;
 	parser->on_stream_end = hls_on_stream_end;
 
-    return flv_parse(options->input_file, parser);
+	return flv_parse(options->input_file, parser, 0);
 }
 
 static void hls_get_av_config(flv_parser * parser, const flvmeta_opts * options) {
@@ -291,7 +295,8 @@ int dump_hls_file_ex(flv_parser * parser, const flvmeta_opts * options) {
 
 	hls_get_av_config(parser, options);
 
-	return flv_parse(options->input_file, parser);
+	//return flv_parse(options->input_file, parser, 2498575);
+	return flv_parse(options->input_file, parser, 0);
 }
 
 int dump_hls_amf_data(const amf_data * data) {
@@ -316,10 +321,10 @@ int dump_hls_amf_data(const amf_data * data) {
 	amf_data_dump_hls(keyframePos, keyframeTs, data, 0);
 	printf("vector size:%d,%d\n", keyframePos.size(), keyframeTs.size());
 
-	//for (int i = 0; i < keyframePos.size(); i++)
-	//	printf("index:%d, pos:%d\n", i, (uint32_t)keyframePos[i]);
-	//for (int i = 0; i < keyframeTs.size(); i++)
-	//	printf("index:%d, time:%lf\n", i, keyframeTs[i]);
+	for (int i = 0; i < keyframePos.size(); i++)
+		printf("index:%d, pos:%d\n", i, (uint32_t)keyframePos[i]);
+	for (int i = 0; i < keyframeTs.size(); i++)
+		printf("index:%d, time:%lf\n", i, keyframeTs[i]);
 
 	printf("\n");
 	return OK;
