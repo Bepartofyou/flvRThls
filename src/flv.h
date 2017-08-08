@@ -29,7 +29,6 @@
 
 #include "types.h"
 #include "amf.h"
-#include "put_bits.h"
 
 /* error statuses */
 #define FLV_OK                          0
