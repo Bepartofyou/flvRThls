@@ -33,6 +33,8 @@ extern "C" {
 
 int read_avc_resolution(flv_stream * f, uint32 body_length, uint32 * width, uint32 * height);
 
+int read_avc_sps_pps(flv_parser * parser);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

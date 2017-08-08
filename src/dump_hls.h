@@ -23,6 +23,7 @@
 #define __DUMP_HLS_H__
 
 #include "flvmeta.h"
+#include "avc.h"
 #include <list>
 #include <vector>
 

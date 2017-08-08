@@ -453,9 +453,9 @@ int flv_parse(const char * file, flv_parser * parser, file_offset_t offset) {
         return FLV_ERROR_OPEN_READ;
     }
 
-	//set flv offset
+	//set flv keyframe offset
 	flv_set_offset(parser->stream, offset);
-
+	//if setting keyframe offset, no need to read header,just read AV tags
 	if (flv_get_offset(parser->stream) == 0)
 	{
 		retval = flv_read_header(parser->stream, &header);

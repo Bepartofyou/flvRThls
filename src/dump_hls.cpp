@@ -77,16 +77,24 @@ static int hls_on_video_tag(flv_tag * tag, flv_video_tag vt, flv_parser * parser
 
         printf("* AVC packet type: %s\n", dump_string_get_avc_packet_type(type));
 
-        /* composition time */
-        if (type == FLV_AVC_PACKET_TYPE_NALU) {
-            uint24_be composition_time;
+		/* composition time */
+		if (type == FLV_AVC_PACKET_TYPE_SEQUENCE_HEADER) {
 
-            if (flv_read_tag_body(parser->stream, &composition_time, sizeof(uint24_be)) < sizeof(uint24_be)) {
-                return ERROR_INVALID_TAG;
-            }
+			read_avc_sps_pps(parser);
 
-            printf("* Composition time offset: %i\n", uint24_be_to_uint32(composition_time));
-        }
+			parser->stream->flag_videoconfig = true;
+		}
+
+        ///* composition time */
+        //if (type == FLV_AVC_PACKET_TYPE_NALU) {
+        //    uint24_be composition_time;
+
+        //    if (flv_read_tag_body(parser->stream, &composition_time, sizeof(uint24_be)) < sizeof(uint24_be)) {
+        //        return ERROR_INVALID_TAG;
+        //    }
+
+        //    printf("* Composition time offset: %i\n", uint24_be_to_uint32(composition_time));
+        //}
     }
 
     return OK;
@@ -158,6 +166,7 @@ static void adtsHeaderAnalysis(uint8_t *pBuffer, uint32_t length)
 static void adts_header_generate(uint8_t *buf, int size, int pce_size, int channel, int profile, int samplerate_index)
 {
 	int touchsize = size + 7;
+
 	//copy from nginx-rtmp-module 'ngx_rtmp_hls_module.c'  line:1787
 	buf[0] = 0xff;
 	buf[1] = 0xf1;

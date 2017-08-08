@@ -294,3 +294,82 @@ int read_avc_resolution(flv_stream * f, uint32 body_length, uint32 * width, uint
     free(sps_buffer);
     return FLV_OK;
 }
+
+/**
+Tries to read the resolution of the current video packet.
+We assume to be at the first byte of the video data.
+*/
+int read_avc_sps_pps(flv_parser * parser) {
+	uint24 composition_time;
+	AVCDecoderConfigurationRecord adcr;
+	uint16 sps_size;
+
+	uint8 numOfPictureParameterSets;
+	uint16 pps_size;
+
+	/* make sure we have enough bytes to read in the current tag */
+	if (parser->stream->current_tag_body_length < sizeof(uint24) + sizeof(AVCDecoderConfigurationRecord)) {
+		return FLV_OK;
+	}
+
+	/* read the composition time */
+	if (flv_read_tag_body(parser->stream, &composition_time, sizeof(uint24)) < sizeof(uint24)) {
+		return FLV_ERROR_EOF;
+	}
+
+	/* we need to read an AVCDecoderConfigurationRecord */
+	if (read_avc_decoder_configuration_record(parser->stream, &adcr) == FLV_ERROR_EOF) {
+		return FLV_ERROR_EOF;
+	}
+
+	/* number of SequenceParameterSets */
+	if ((adcr.numOfSequenceParameterSets & 0x1F) == 0) {
+		/* no SPS, return */
+		return FLV_OK;
+	}
+
+	/* number of SequenceParameterSets */
+	if ((adcr.numOfSequenceParameterSets & 0x1F) != 1) {
+		/* no only one SPS, return */
+		printf("not only one sps, sps number:%d\n", (adcr.numOfSequenceParameterSets & 0x1F));
+	}
+
+	/** read the first SequenceParameterSet found */
+	/* SPS size */
+	if (flv_read_tag_body(parser->stream, &sps_size, sizeof(uint16)) < sizeof(uint16)) {
+		return FLV_ERROR_EOF;
+	}
+	parser->stream->videoconfig.sps_size = swap_uint16(sps_size);
+	/* read the SPS entirely */
+	if (flv_read_tag_body(parser->stream, parser->stream->videoconfig.sps, (size_t)parser->stream->videoconfig.sps_size) < (size_t)parser->stream->videoconfig.sps_size) {
+		return FLV_ERROR_EOF;
+	}
+	/* parse SPS to determine video resolution */
+	parse_sps(parser->stream->videoconfig.sps, (size_t)parser->stream->videoconfig.sps_size, &parser->stream->videoconfig.width, &parser->stream->videoconfig.height);
+
+
+	/* number of PictureParameterSets */
+	if (flv_read_tag_body(parser->stream, &numOfPictureParameterSets, sizeof(uint8)) < sizeof(uint8)) {
+		return FLV_ERROR_EOF;
+	}
+	if (numOfPictureParameterSets != 1) {
+		/* no only one PPS, return */
+		printf("not only one pps, pps number:%d\n", numOfPictureParameterSets);
+	}
+	/* PPS size */
+	if (flv_read_tag_body(parser->stream, &pps_size, sizeof(uint16)) < sizeof(uint16)) {
+		return FLV_ERROR_EOF;
+	}
+	parser->stream->videoconfig.pps_size = swap_uint16(pps_size);
+	/* read the SPS entirely */
+	if (flv_read_tag_body(parser->stream, parser->stream->videoconfig.pps, (size_t)parser->stream->videoconfig.pps_size) < (size_t)parser->stream->videoconfig.pps_size) {
+		return FLV_ERROR_EOF;
+	}
+
+	//for (size_t i = 0; i < parser->stream->videoconfig.sps_size; i++)
+	//	printf("0x%X\n", parser->stream->videoconfig.sps[i]);
+	//for (size_t i = 0; i < parser->stream->videoconfig.pps_size; i++)
+	//	printf("0x%X\n", parser->stream->videoconfig.pps[i]);
+
+	return FLV_OK;
+}
