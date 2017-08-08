@@ -27,6 +27,30 @@
 #include <vector>
 
 
+typedef struct{
+	short syncword;
+	short id;
+	short layer;
+	short protection_absent;
+	short profile;
+	short sampling_frequency_index;
+	short private_bit;
+	short channel_configuration;
+	short original_copy;
+	short home;
+	//  short emphasis;
+	short copyright_identification_bit;
+	short copyright_identification_start;
+	short aac_frame_length;
+	short adts_buffer_fullness;
+	short no_raw_data_blocks_in_frame;
+	short crc_check;
+
+	/* control param */
+	short old_format;
+
+
+} STRU_ADTS_HEADER;
 
 typedef struct HLSSegment {
 	char filename[1024];

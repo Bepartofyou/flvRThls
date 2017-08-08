@@ -165,7 +165,7 @@ void flv_tag_set_timestamp(flv_tag * tag, uint32 timestamp);
 #define FLV_STREAM_STATE_PREV_TAG_SIZE  3
 
 typedef struct __flv_audio_config {
-	uint32 samplerate;
+	uint32 samplerate_index;
 	uint32 channels;
 	uint32 profile;
 	uint8 adts[7];

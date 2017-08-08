@@ -92,6 +92,85 @@ static int hls_on_video_tag(flv_tag * tag, flv_video_tag vt, flv_parser * parser
     return OK;
 }
 
+static void adtsHeaderAnalysis(uint8_t *pBuffer, uint32_t length)
+{
+	STRU_ADTS_HEADER  m_sAACInfo;
+
+	if (((pBuffer[0] == 0xFF) && ((pBuffer[1] & 0xF1) == 0xF0)) | // 代表有crc校验，所以adts长度为9
+		((pBuffer[0] == 0xFF) && ((pBuffer[1] & 0xF1) == 0xF1)))  // 代表没有crc校验，所以adts长度为7
+	{
+		m_sAACInfo.syncword = ((uint16_t)pBuffer[0] & 0xFFF0) >> 4;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:syncword  %d\n", m_sAACInfo.syncword);
+
+		m_sAACInfo.id = ((uint16_t)pBuffer[1] & 0x8) >> 3;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:id  %d\n", m_sAACInfo.id);
+
+		m_sAACInfo.layer = ((uint16_t)pBuffer[1] & 0x6) >> 1;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:layer  %d\n", m_sAACInfo.layer);
+
+		m_sAACInfo.protection_absent = (uint16_t)pBuffer[1] & 0x1;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:protection_absent  %d\n", m_sAACInfo.protection_absent);
+
+		m_sAACInfo.profile = (((uint16_t)pBuffer[2] & 0xc0) >> 6) + 1;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:profile  %d\n", m_sAACInfo.profile);
+
+		m_sAACInfo.sampling_frequency_index = ((uint16_t)pBuffer[2] & 0x3c) >> 2;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:sampling_frequency_index  %d\n", m_sAACInfo.sampling_frequency_index);
+
+		m_sAACInfo.private_bit = ((uint16_t)pBuffer[2] & 0x2) >> 1;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:pritvate_bit  %d\n", m_sAACInfo.private_bit);
+
+		m_sAACInfo.channel_configuration = ((((uint16_t)pBuffer[2] & 0x1) << 2) | (((uint16_t)pBuffer[3] & 0xc0) >> 6));
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:channel_configuration  %d\n", m_sAACInfo.channel_configuration);
+
+		m_sAACInfo.original_copy = ((uint16_t)pBuffer[3] & 0x30) >> 5;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:original_copy  %d\n", m_sAACInfo.original_copy);
+
+		m_sAACInfo.home = ((uint16_t)pBuffer[3] & 0x10) >> 4;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:home  %d\n", m_sAACInfo.home);
+
+		//		m_sAACInfo.emphasis = ((unsigned short)pBuffer[3] & 0xc) >> 2;                      
+		//fprintf(stderr, "m_sAACInfo:emphasis  %d\n", m_sAACInfo.emphasis);
+		m_sAACInfo.copyright_identification_bit = ((uint16_t)pBuffer[3] & 0x2) >> 1;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() pAdm_sAACInfots_header:copyright_identification_bit  %d\n", m_sAACInfo.copyright_identification_bit);
+
+		m_sAACInfo.copyright_identification_start = (uint16_t)pBuffer[3] & 0x1;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:copyright_identification_start  %d\n", m_sAACInfo.copyright_identification_start);
+
+		m_sAACInfo.aac_frame_length = ((((uint16_t)pBuffer[4]) << 5) | (((uint16_t)pBuffer[5] & 0xf8) >> 3));
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:aac_frame_length  %d\n", m_sAACInfo.aac_frame_length);
+
+		m_sAACInfo.adts_buffer_fullness = (((uint16_t)pBuffer[5] & 0x7) | ((uint16_t)pBuffer[6]));
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:adts_buffer_fullness  %d\n", m_sAACInfo.adts_buffer_fullness);
+
+		m_sAACInfo.no_raw_data_blocks_in_frame = ((uint16_t)pBuffer[7] & 0xc0) >> 6;
+		printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:no_raw_data_blocks_in_frame  %d\n", m_sAACInfo.no_raw_data_blocks_in_frame);
+
+		// The protection_absent bit indicates whether or not the header contains the two extra bytes
+		if (m_sAACInfo.protection_absent == 0)
+		{
+			m_sAACInfo.crc_check = ((((uint16_t)pBuffer[7] & 0x3c) << 10) | (((uint16_t)pBuffer[8]) << 2) | (((uint16_t)pBuffer[9] & 0xc0) >> 6));
+			printf("AudioCodecInfo::AdtsHeaderAnalysis() m_sAACInfo:crc_check  %d\n", m_sAACInfo.crc_check);
+		}
+	}
+}
+
+static void adts_header_generate(uint8_t *buf, int size, int pce_size, int channel, int profile, int samplerate_index)
+{
+	int touchsize = size + 7;
+	//copy from nginx-rtmp-module 'ngx_rtmp_hls_module.c'  line:1787
+	buf[0] = 0xff;
+	buf[1] = 0xf1;
+	buf[2] = (uint8_t)(((profile - 1) << 6)
+		| (samplerate_index << 2)
+		| ((channel & 0x04) >> 2));
+
+	buf[3] = (uint8_t)(((channel & 0x03) << 6) | ((touchsize >> 11) & 0x03));
+	buf[4] = (uint8_t)(touchsize >> 3);
+	buf[5] = (uint8_t)((touchsize << 5) | 0x1f);
+	buf[6] = 0xfc;
+}
+
 static int hls_on_audio_tag(flv_tag * tag, flv_audio_tag at, flv_parser * parser) {
     printf("* Sound type: %s\n", dump_string_get_sound_type(at));
     printf("* Sound size: %s\n", dump_string_get_sound_size(at));
@@ -108,6 +187,34 @@ static int hls_on_audio_tag(flv_tag * tag, flv_audio_tag at, flv_parser * parser
         }
 
         printf("* AAC packet type: %s\n", dump_string_get_aac_packet_type(type));
+
+		if (type == FLV_AAC_PACKET_TYPE_SEQUENCE_HEADER){
+
+			flv_aac_packet_type conf[2];
+			if (flv_read_tag_body(parser->stream, &conf, sizeof(conf)) < sizeof(conf)) {
+				return ERROR_INVALID_TAG;
+			}
+
+			uint8_t samplerate_index = 0;
+			samplerate_index |= ((conf[1] >> 7) & 0x01);
+			samplerate_index |= ((conf[0] << 1) & 0x0E);
+
+			parser->stream->audioconfig.samplerate_index = samplerate_index;
+			parser->stream->audioconfig.channels = uint8_t((conf[1] >> 3) & 0x0f);
+			parser->stream->audioconfig.profile = uint8_t((conf[0] >> 3) & 0x1f);
+
+			parser->stream->flag_audioconfig = true;
+
+			//uint8_t p[7] = { 0 };
+			//int size = 155;
+			//adts_header_generate(p, size, 0, parser->stream->audioconfig.channels, parser->stream->audioconfig.profile,
+			//	parser->stream->audioconfig.samplerate_index);
+
+			//for (size_t i = 0; i < 7; i++)
+			//	printf("0x%X\n", p[i]);
+
+			//adtsHeaderAnalysis(p, 7);
+		}
     }
 
     return OK;
