@@ -184,9 +184,14 @@ typedef struct __flv_video_config {
 
 typedef struct __flv_stream {
 	bool flag_audioconfig;
-	bool flag_videoconfig;
 	flv_audio_config audioconfig;
+	bool flag_videoconfig;
 	flv_video_config videoconfig;
+	bool flag_metadata;
+	std::vector<double> keyframePos;
+	std::vector<double> keyframeTs;
+	
+	
 
     FILE * flvin;
     uint8 state;
@@ -235,6 +240,7 @@ typedef struct __flv_parser {
 } flv_parser;
 
 int flv_parse(const char * file, flv_parser * parser, file_offset_t offset);
+int flv_parse_av_config(const char * file, flv_parser * parser, file_offset_t offset);
 
 #ifdef __cplusplus
 }

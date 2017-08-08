@@ -73,7 +73,7 @@ extern "C" {
 void dump_hls_setup_metadata_dump(flv_parser * parser);
 int dump_hls_file(flv_parser * parser, const flvmeta_opts * options);
 int dump_hls_file_ex(flv_parser * parser, const flvmeta_opts * options);
-int dump_hls_amf_data(const amf_data * data);
+int dump_hls_amf_data(const amf_data * data, flv_parser * parser);
 
 #ifdef __cplusplus
 }

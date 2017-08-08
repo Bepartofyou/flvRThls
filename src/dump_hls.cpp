@@ -236,7 +236,8 @@ static int hls_on_audio_tag(flv_tag * tag, flv_audio_tag at, flv_parser * parser
 static int hls_on_metadata_tag(flv_tag * tag, amf_data * name, amf_data * data, flv_parser * parser) {
     printf("* Metadata event name: %s\n", amf_string_get_bytes(name));
     printf("* Metadata contents: ");
-    amf_data_dump(stdout, data, 0);
+    //amf_data_dump(stdout, data, 0);
+	dump_hls_amf_data(data, parser);
     printf("\n");
     return OK;
 }
@@ -257,13 +258,13 @@ static int hls_on_metadata_tag_only(flv_tag * tag, amf_data * name, amf_data * d
 
     if (options->metadata_event == NULL) {
         if (!strcmp((char*)amf_string_get_bytes(name), "onMetaData")) {
-			dump_hls_amf_data(data);
+			dump_hls_amf_data(data, parser);
             return FLVMETA_DUMP_STOP_OK;
         }
     }
     else {
         if (!strcmp((char*)amf_string_get_bytes(name), options->metadata_event)) {
-			dump_hls_amf_data(data);
+			dump_hls_amf_data(data, parser);
         }
     }
     return OK;
@@ -302,15 +303,16 @@ static void hls_get_av_config(flv_parser * parser, const flvmeta_opts * options)
 
 int dump_hls_file_ex(flv_parser * parser, const flvmeta_opts * options) {
 
-	hls_get_av_config(parser, options);
+	//hls_get_av_config(parser, options);
 
-	//return flv_parse(options->input_file, parser, 2498575);
-	return flv_parse(options->input_file, parser, 0);
+	parser->on_audio_tag = hls_on_audio_tag;
+	parser->on_video_tag = hls_on_video_tag;
+	parser->on_metadata_tag = hls_on_metadata_tag;
+
+	return flv_parse_av_config(options->input_file, parser, 0);
 }
 
-int dump_hls_amf_data(const amf_data * data) {
-	std::vector<double> keyframePos;
-	std::vector<double> keyframeTs;
+int dump_hls_amf_data(const amf_data * data, flv_parser * parser) {
 
 	FILE* fp = fopen("test.m3u8", "wb");
 
@@ -326,14 +328,15 @@ int dump_hls_amf_data(const amf_data * data) {
 
 	double target_duration = 0;
 
-	printf("vector size:%d,%d\n", keyframePos.size(), keyframeTs.size());
-	amf_data_dump_hls(keyframePos, keyframeTs, data, 0);
-	printf("vector size:%d,%d\n", keyframePos.size(), keyframeTs.size());
+	printf("vector size:%d,%d\n", parser->stream->keyframePos.size(), parser->stream->keyframeTs.size());
+	amf_data_dump_hls(parser->stream->keyframePos, parser->stream->keyframeTs, data, 0);
+	printf("vector size:%d,%d\n", parser->stream->keyframePos.size(), parser->stream->keyframeTs.size());
 
-	for (int i = 0; i < keyframePos.size(); i++)
-		printf("index:%d, pos:%d\n", i, (uint32_t)keyframePos[i]);
-	for (int i = 0; i < keyframeTs.size(); i++)
-		printf("index:%d, time:%lf\n", i, keyframeTs[i]);
+	parser->stream->flag_metadata = true;
+	//for (int i = 0; i < keyframePos.size(); i++)
+	//	printf("index:%d, pos:%d\n", i, (uint32_t)keyframePos[i]);
+	//for (int i = 0; i < keyframeTs.size(); i++)
+	//	printf("index:%d, time:%lf\n", i, keyframeTs[i]);
 
 	printf("\n");
 	return OK;
