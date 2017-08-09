@@ -105,7 +105,7 @@ static int hls_segment(flv_parser * parser) {
 	if (parser->stream->hlsconfig.hls_file == NULL){
 
 		//int index = parser->stream->flvname.rfind(".flv");
-		std::string hlsname = get_flv_key(parser->stream->flvname) + ".m3u8";
+		std::string hlsname = get_flv_key(std::string(parser->stream->flvname)) + ".m3u8";
 		parser->stream->hlsconfig.hls_file = fopen(hlsname.c_str(), "wb");
 
 		fwrite("#EXTM3U\n", strlen("#EXTM3U\n"), 1, parser->stream->hlsconfig.hls_file);
@@ -128,7 +128,7 @@ static int hls_segment(flv_parser * parser) {
 
 		char conunt[100] = { 0 };
 		sprintf(conunt, "%.4u", parser->stream->hlsconfig.hls_count);
-		std::string strfile = get_flv_key(parser->stream->flvname) + "-keyframeID-" +
+		std::string strfile = get_flv_key(std::string(parser->stream->flvname)) + "-keyframeID-" +
 			num2str(parser->stream->hlsconfig.key_frame_current) + "-" + std::string(conunt) + ".ts\n";
 		fwrite(strfile.c_str(), strfile.size(), 1, parser->stream->hlsconfig.hls_file);
 

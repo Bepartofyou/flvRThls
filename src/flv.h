@@ -217,7 +217,8 @@ typedef struct __flv_stream {
 	uint32_t h264_buf_max;
 	int h264_header_count;
 
-	std::string flvname;
+	char flvname[300];
+	//std::string flvname;
     FILE * flvin;
     uint8 state;
     flv_tag current_tag;

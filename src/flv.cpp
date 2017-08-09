@@ -618,7 +618,7 @@ int flv_parse_av_config(const char * file, flv_parser * parser, file_offset_t of
 	if (!parser->stream)
 		parser->stream = flv_open(file);
 
-	parser->stream->flvname = std::string(file);
+	strcpy(parser->stream->flvname, file);
 	//parser->stream->flvname = parser->stream->flvname.substr(0, parser->stream->flvname.rfind(".flv"));
 
 	if (parser->stream == NULL) {
