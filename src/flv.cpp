@@ -614,9 +614,12 @@ int flv_parse_av_config(const char * file, flv_parser * parser, file_offset_t of
 	if (parser == NULL) {
 		return FLV_ERROR_EOF;
 	}
-	
+
 	if (!parser->stream)
 		parser->stream = flv_open(file);
+
+	parser->stream->flvname = std::string(file);
+	//parser->stream->flvname = parser->stream->flvname.substr(0, parser->stream->flvname.rfind(".flv"));
 
 	if (parser->stream == NULL) {
 		return FLV_ERROR_OPEN_READ;
@@ -733,6 +736,14 @@ int flv_get_raw_av(flv_parser * parser, file_offset_t offset) {
 
 	while (flv_read_tag(parser->stream, &tag) == FLV_OK) {
 
+		if (parser->on_tag != NULL) {
+			retval = parser->on_tag(&tag, parser);
+			if (retval != FLV_OK) {
+				flv_close(parser->stream);
+				return retval;
+			}
+		}
+
 		if (tag.type == FLV_TAG_TYPE_AUDIO) {
 			retval = flv_read_audio_tag(parser->stream, &at);
 			if (retval == FLV_ERROR_EOF) {
@@ -780,6 +791,47 @@ int flv_get_raw_av(flv_parser * parser, file_offset_t offset) {
 			return retval;
 		}
 	}
+
+	//fwrite hls end list
+	if (parser->on_metadata_tag != NULL) {
+		retval = parser->on_metadata_tag(&tag, name, data, parser);
+		if (retval != FLV_OK) {
+			flv_close(parser->stream);
+			return retval;
+		}
+	}
+
+	printf("duration:%u\n", parser->stream->hlsconfig.hls_segment_duration);
+
+end:
+
+	if (parser->stream->aac)
+	{
+		fclose(parser->stream->aac);
+		parser->stream->aac = NULL;
+		printf("close aac file\n");
+	}
+	if (parser->stream->h264)
+	{
+		fclose(parser->stream->h264);
+		parser->stream->h264 = NULL;
+		printf("close h264 file\n");
+	}
+	if (parser->stream->aac_buffer)
+	{
+		free(parser->stream->aac_buffer);
+		parser->stream->aac_buffer = NULL;
+		printf("free aac_buffer\n");
+	}
+	if (parser->stream->h264_buffer)
+	{
+		free(parser->stream->h264_buffer);
+		parser->stream->h264_buffer = NULL;
+		printf("free h264_buffer\n");
+	}
+
+	std::vector<double>().swap(parser->stream->keyframePos);
+	std::vector<double>().swap(parser->stream->keyframeTs);
 
 	flv_close(parser->stream);
 	return FLV_OK;

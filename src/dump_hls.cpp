@@ -27,6 +27,10 @@
 #include <sstream>
 #include <string>
 
+#ifdef WIN32
+#define sprintf	sprintf_s
+#endif
+
 static std::string num2str(double i)
 {
 	std::stringstream ss;
@@ -77,6 +81,68 @@ static int hls_on_tag(flv_tag * tag, flv_parser * parser) {
     printf("Timestamp: %u\n", flv_tag_get_timestamp(*tag));
 
     return OK;
+}
+
+static int hls_on_tag_ex(flv_tag * tag, flv_parser * parser) {
+
+	printf("--- Tag #%u at 0x%" FILE_OFFSET_PRINTF_FORMAT "X", 1, FILE_OFFSET_PRINTF_TYPE(parser->stream->current_tag_offset));
+	printf(" (%" FILE_OFFSET_PRINTF_FORMAT "u) ---\n", FILE_OFFSET_PRINTF_TYPE(parser->stream->current_tag_offset));
+	printf("Tag type: %s\n", dump_string_get_tag_type(tag));
+	printf("Body length: %u\n", flv_tag_get_body_length(*tag));
+	printf("Timestamp: %u\n", flv_tag_get_timestamp(*tag));
+
+	return OK;
+}
+
+static std::string get_flv_key(std::string name) {
+
+	return name.substr(0, name.rfind(".flv"));
+}
+
+static int hls_segment(flv_parser * parser) {
+
+
+	if (parser->stream->hlsconfig.hls_file == NULL){
+
+		//int index = parser->stream->flvname.rfind(".flv");
+		std::string hlsname = get_flv_key(parser->stream->flvname) + ".m3u8";
+		parser->stream->hlsconfig.hls_file = fopen(hlsname.c_str(), "wb");
+
+		fwrite("#EXTM3U\n", strlen("#EXTM3U\n"), 1, parser->stream->hlsconfig.hls_file);
+		fwrite("#EXT-X-VERSION:3\n", strlen("#EXT-X-VERSION:3\n"), 1, parser->stream->hlsconfig.hls_file);
+		fwrite("#EXT-X-TARGETDURATION:12\n", strlen("#EXT-X-TARGETDURATION:12\n"), 1, parser->stream->hlsconfig.hls_file);
+		fwrite("#EXT-X-MEDIA-SEQUENCE:0\n", strlen("#EXT-X-MEDIA-SEQUENCE:0\n"), 1, parser->stream->hlsconfig.hls_file);
+	}else
+	{
+		uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
+		parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
+
+		parser->stream->hlsconfig.hls_segment_duration = parser->stream->hlsconfig.hls_segment_duration > interval ? 
+			parser->stream->hlsconfig.hls_segment_duration : interval;
+
+		char ts[100] = { 0 };
+		sprintf(ts, "%.6f", (double)interval / (double)1000);
+		//std::string tmp = "#EXTINF:" + num2str((double)interval/(double)1000) + ",\n";
+		std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
+		fwrite(strts.c_str(), strts.size(), 1, parser->stream->hlsconfig.hls_file);
+
+		char conunt[100] = { 0 };
+		sprintf(conunt, "%.4u", parser->stream->hlsconfig.hls_count);
+		std::string strfile = get_flv_key(parser->stream->flvname) + "-keyframeID-" +
+			num2str(parser->stream->hlsconfig.key_frame_current) + "-" + std::string(conunt) + ".ts\n";
+		fwrite(strfile.c_str(), strfile.size(), 1, parser->stream->hlsconfig.hls_file);
+
+		//fwrite("#EXTINF:6.000000,\n", strlen("#EXTINF:6.000000,\n"), 1, parser->stream->hlsconfig.hls_file);
+		//fwrite("test-0000.ts\n", strlen("test-0000.ts\n"), 1, parser->stream->hlsconfig.hls_file);
+		fflush(parser->stream->hlsconfig.hls_file);
+		//end
+		if (parser->stream->hlsconfig.key_frame_count == parser->stream->keyframePos.size()){
+			fwrite("#EXT-X-ENDLIST", strlen("#EXT-X-ENDLIST"), 1, parser->stream->hlsconfig.hls_file);
+			fclose(parser->stream->hlsconfig.hls_file);
+		}
+	}
+
+	return OK;
 }
 
 static int hls_on_video_tag(flv_tag * tag, flv_video_tag vt, flv_parser * parser) {
@@ -138,6 +204,7 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 		/* sequence header */
 		if (type == FLV_AVC_PACKET_TYPE_SEQUENCE_HEADER) {
 
+			parser->stream->hlsconfig.key_frame_count++;
 			printf("1111111111111111111\n");
 			read_avc_sps_pps(parser);
 
@@ -155,6 +222,19 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 			}
 		}
 		else{
+
+			/*get first pkt ts*/
+			if (!parser->stream->hlsconfig.flag_first_ts){
+				parser->stream->hlsconfig.first_ts = flv_tag_get_timestamp(*tag);
+				parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.first_ts;
+				printf("first pkt ts:%u, video\n", parser->stream->hlsconfig.first_ts);
+
+				parser->stream->hlsconfig.hls_segment_num = 6;
+				hls_segment(parser);
+
+				parser->stream->hlsconfig.flag_first_ts = true;
+			}
+
 			if (parser->stream->h264){
 
 				if (parser->stream->h264_buffer == NULL){
@@ -198,6 +278,21 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 
 				if (parser->stream->current_tag_body_length != 0)
 					printf("2222222222: %d\n", parser->stream->current_tag_body_length);
+
+				//segment TS  last io timestamp
+				parser->stream->hlsconfig.hls_end_ts = flv_tag_get_timestamp(*tag);
+
+
+				if (flv_video_tag_frame_type(vt) == FLV_VIDEO_TAG_FRAME_TYPE_KEYFRAME){
+					parser->stream->hlsconfig.key_frame_count++;
+
+					if (parser->stream->hlsconfig.key_frame_count % parser->stream->hlsconfig.hls_segment_num == 0)
+					{
+						hls_segment(parser);
+						parser->stream->hlsconfig.key_frame_current = parser->stream->hlsconfig.key_frame_count;
+						parser->stream->hlsconfig.hls_count++;
+					}
+				}	
 			}
 		}
 	}
@@ -365,6 +460,17 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 			}
 		}
 		else{
+			/*get first pkt ts*/
+			if (!parser->stream->hlsconfig.flag_first_ts){
+				parser->stream->hlsconfig.first_ts = flv_tag_get_timestamp(*tag);
+				parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.first_ts;
+				printf("first pkt ts:%u, audio\n", parser->stream->hlsconfig.first_ts);
+
+				parser->stream->hlsconfig.hls_segment_num = 6;
+				hls_segment(parser);
+
+				parser->stream->hlsconfig.flag_first_ts = true;
+			}
 
 			if (parser->stream->aac){
 
@@ -394,6 +500,9 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 				}
 
 				fwrite(parser->stream->aac_buffer, uint24_be_to_uint32(tag->body_length) - 2, 1, parser->stream->aac);
+
+				//segment TS  last io timestamp
+				parser->stream->hlsconfig.hls_end_ts = flv_tag_get_timestamp(*tag);
 			}
 		}
 	}
@@ -408,6 +517,18 @@ static int hls_on_metadata_tag(flv_tag * tag, amf_data * name, amf_data * data, 
 	dump_hls_amf_data(data, parser);
     printf("\n");
     return OK;
+}
+
+static int hls_segment_finish(flv_tag * tag, amf_data * name, amf_data * data, flv_parser * parser) {
+
+	(void)tag;
+	(void)name;
+	(void)data;
+	//(void)parser;
+
+	hls_segment(parser);
+
+	return OK;
 }
 
 static int hls_on_prev_tag_size(uint32 size, flv_parser * parser) {
@@ -482,28 +603,27 @@ int dump_hls_file_ex(flv_parser * parser, const flvmeta_opts * options) {
 
 int fragement_hls_file_ex(flv_parser * parser, const flvmeta_opts * options) {
 
+	//parser->on_tag = hls_on_tag_ex;
 	parser->on_audio_tag = hls_on_audio_tag_ex;
 	parser->on_video_tag = hls_on_video_tag_ex;
-	parser->on_metadata_tag = NULL;
+	parser->on_metadata_tag = hls_segment_finish;
 
 	return flv_get_raw_av(parser, 0);
 }
 
 int dump_hls_amf_data(const amf_data * data, flv_parser * parser) {
 
-	FILE* fp = fopen("test.m3u8", "wb");
+	//FILE* fp = fopen("test.m3u8", "wb");
 
-	fwrite("#EXTM3U\n", strlen("#EXTM3U\n"), 1, fp);
-	fwrite("#EXT-X-VERSION:3\n", strlen("#EXT-X-VERSION:3\n"), 1, fp);
-	fwrite("#EXT-X-TARGETDURATION:12\n", strlen("#EXT-X-TARGETDURATION:12\n"), 1, fp);
-	fwrite("#EXT-X-MEDIA-SEQUENCE:0\n", strlen("#EXT-X-MEDIA-SEQUENCE:0\n"), 1, fp);
-	fwrite("#EXTINF:6.000000,\n", strlen("#EXTINF:6.000000,\n"), 1, fp);
-	fwrite("test-0000.ts\n", strlen("test-0000.ts\n"), 1, fp);
-	fwrite("#EXT-X-ENDLIST", strlen("#EXT-X-ENDLIST"), 1, fp);
+	//fwrite("#EXTM3U\n", strlen("#EXTM3U\n"), 1, fp);
+	//fwrite("#EXT-X-VERSION:3\n", strlen("#EXT-X-VERSION:3\n"), 1, fp);
+	//fwrite("#EXT-X-TARGETDURATION:12\n", strlen("#EXT-X-TARGETDURATION:12\n"), 1, fp);
+	//fwrite("#EXT-X-MEDIA-SEQUENCE:0\n", strlen("#EXT-X-MEDIA-SEQUENCE:0\n"), 1, fp);
+	//fwrite("#EXTINF:6.000000,\n", strlen("#EXTINF:6.000000,\n"), 1, fp);
+	//fwrite("test-0000.ts\n", strlen("test-0000.ts\n"), 1, fp);
+	//fwrite("#EXT-X-ENDLIST", strlen("#EXT-X-ENDLIST"), 1, fp);
 
-	fclose(fp);
-
-	double target_duration = 0;
+	//fclose(fp);
 
 	printf("vector size:%d,%d\n", parser->stream->keyframePos.size(), parser->stream->keyframeTs.size());
 	amf_data_dump_hls(parser->stream->keyframePos, parser->stream->keyframeTs, data, 0);

@@ -182,6 +182,21 @@ typedef struct __flv_video_config {
 
 } flv_video_config;
 
+typedef struct __hls_config {
+	FILE* ts_file;
+	FILE* hls_file;
+	bool flag_first_ts;
+	uint32_t first_ts;
+	uint32_t hls_start_ts;
+	uint32_t hls_end_ts;
+	uint32_t hls_segment_num;
+	uint32_t key_frame_count;
+	uint32_t key_frame_current;
+
+	uint32_t hls_segment_duration;
+	uint32_t hls_count;
+} hls_config;
+
 typedef struct __flv_stream {
 	bool flag_audioconfig;
 	flv_audio_config audioconfig;
@@ -190,6 +205,8 @@ typedef struct __flv_stream {
 	bool flag_metadata;
 	std::vector<double> keyframePos;
 	std::vector<double> keyframeTs;
+
+	hls_config hlsconfig;
 	
 	FILE * aac;
 	uint8_t* aac_buffer;
@@ -200,6 +217,7 @@ typedef struct __flv_stream {
 	uint32_t h264_buf_max;
 	int h264_header_count;
 
+	std::string flvname;
     FILE * flvin;
     uint8 state;
     flv_tag current_tag;
