@@ -45,6 +45,7 @@ int dump_metadata(const flvmeta_opts * options);
 /* dump the full contents of an FLV file */
 //int dump_flv_file(const flvmeta_opts * options);
 int dump_flv_file(const flvmeta_opts * options, flv_parser * parser);
+int fragment_flv_file(const flvmeta_opts * options, flv_parser * parser);
 
 /* dump AMF data directly */
 int dump_amf_data(const amf_data * data, const flvmeta_opts * options);

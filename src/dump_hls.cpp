@@ -24,6 +24,23 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sstream>
+#include <string>
+
+static std::string num2str(double i)
+{
+	std::stringstream ss;
+	ss << i;
+	return ss.str();
+}
+
+static int str2num(std::string s)
+{
+	int num;
+	std::stringstream ss(s);
+	ss >> num;
+	return num;
+}
 
 /* hls FLV file full dump callbacks */
 
@@ -98,6 +115,47 @@ static int hls_on_video_tag(flv_tag * tag, flv_video_tag vt, flv_parser * parser
     }
 
     return OK;
+}
+
+static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * parser) {
+
+	return OK;
+
+	printf("* Video codec: %s\n", dump_string_get_video_codec(vt));
+	printf("* Video frame type: %s\n", dump_string_get_video_frame_type(vt));
+
+	/* if AVC, detect frame type and composition time */
+	if (flv_video_tag_codec_id(vt) == FLV_VIDEO_TAG_CODEC_AVC) {
+		flv_avc_packet_type type;
+
+		/* packet type */
+		if (flv_read_tag_body(parser->stream, &type, sizeof(flv_avc_packet_type)) < sizeof(flv_avc_packet_type)) {
+			return ERROR_INVALID_TAG;
+		}
+
+		printf("* AVC packet type: %s\n", dump_string_get_avc_packet_type(type));
+
+		/* composition time */
+		if (type == FLV_AVC_PACKET_TYPE_SEQUENCE_HEADER) {
+
+			read_avc_sps_pps(parser);
+
+			parser->stream->flag_videoconfig = true;
+		}
+
+		///* composition time */
+		//if (type == FLV_AVC_PACKET_TYPE_NALU) {
+		//    uint24_be composition_time;
+
+		//    if (flv_read_tag_body(parser->stream, &composition_time, sizeof(uint24_be)) < sizeof(uint24_be)) {
+		//        return ERROR_INVALID_TAG;
+		//    }
+
+		//    printf("* Composition time offset: %i\n", uint24_be_to_uint32(composition_time));
+		//}
+	}
+
+	return OK;
 }
 
 static void adtsHeaderAnalysis(uint8_t *pBuffer, uint32_t length)
@@ -233,6 +291,69 @@ static int hls_on_audio_tag(flv_tag * tag, flv_audio_tag at, flv_parser * parser
     return OK;
 }
 
+static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * parser) {
+
+	/* if AAC, detect packet type */
+	if (flv_audio_tag_sound_format(at) == FLV_AUDIO_TAG_SOUND_FORMAT_AAC) {
+		flv_aac_packet_type type;
+
+		/* packet type */
+		if (flv_read_tag_body(parser->stream, &type, sizeof(flv_aac_packet_type)) < sizeof(flv_aac_packet_type)) {
+			return ERROR_INVALID_TAG;
+		}
+
+		if (type == FLV_AAC_PACKET_TYPE_SEQUENCE_HEADER){
+
+			parser->stream->aac_header_count++;
+
+			if (parser->stream->aac == NULL){
+				std::string aac_name = num2str(parser->stream->aac_header_count) + ".aac";
+				parser->stream->aac = fopen(aac_name.c_str(), "wb");
+			}
+			else{
+				fclose(parser->stream->aac);
+
+				std::string aac_name = num2str(parser->stream->aac_header_count) + ".aac";
+				parser->stream->aac = fopen(aac_name.c_str(), "wb");
+			}
+		}
+		else{
+
+			if (parser->stream->aac){
+
+				if (parser->stream->aac_buffer == NULL){
+
+					parser->stream->aac_buf_max = uint24_be_to_uint32(tag->body_length);
+					parser->stream->aac_buffer = (uint8_t*)malloc(sizeof(uint8_t)*parser->stream->aac_buf_max);
+				}
+				else
+				{
+					if (parser->stream->aac_buf_max < uint24_be_to_uint32(tag->body_length))
+					{
+						parser->stream->aac_buf_max = uint24_be_to_uint32(tag->body_length);
+						parser->stream->aac_buffer = (uint8_t*)realloc(parser->stream->aac_buffer, parser->stream->aac_buf_max);
+					}
+				}
+
+				uint8_t adts_header[7] = { 0 };
+
+				adts_header_generate(adts_header, uint24_be_to_uint32(tag->body_length) - 2, 0,
+					parser->stream->audioconfig.channels, parser->stream->audioconfig.profile, parser->stream->audioconfig.samplerate_index);
+
+				fwrite(adts_header, 7, 1, parser->stream->aac);
+
+				if (flv_read_tag_body(parser->stream, parser->stream->aac_buffer, uint24_be_to_uint32(tag->body_length) - 2) < uint24_be_to_uint32(tag->body_length) - 2) {
+					return ERROR_INVALID_TAG;
+				}
+
+				fwrite(parser->stream->aac_buffer, uint24_be_to_uint32(tag->body_length) - 2, 1, parser->stream->aac);
+			}
+		}
+	}
+
+	return OK;
+}
+
 static int hls_on_metadata_tag(flv_tag * tag, amf_data * name, amf_data * data, flv_parser * parser) {
     printf("* Metadata event name: %s\n", amf_string_get_bytes(name));
     printf("* Metadata contents: ");
@@ -310,6 +431,15 @@ int dump_hls_file_ex(flv_parser * parser, const flvmeta_opts * options) {
 	parser->on_metadata_tag = hls_on_metadata_tag;
 
 	return flv_parse_av_config(options->input_file, parser, 0);
+}
+
+int fragement_hls_file_ex(flv_parser * parser, const flvmeta_opts * options) {
+
+	parser->on_audio_tag = hls_on_audio_tag_ex;
+	parser->on_video_tag = hls_on_video_tag_ex;
+	parser->on_metadata_tag = NULL;
+
+	return flv_get_raw_av(parser, 0);
 }
 
 int dump_hls_amf_data(const amf_data * data, flv_parser * parser) {

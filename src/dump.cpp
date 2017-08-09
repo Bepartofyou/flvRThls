@@ -198,6 +198,31 @@ int dump_flv_file(const flvmeta_opts * options, flv_parser * parser) {
     }
 }
 
+/*  */
+int fragment_flv_file(const flvmeta_opts * options, flv_parser * parser) {
+
+	switch (options->dump_format) {
+	//case FLVMETA_FORMAT_JSON:
+	//	//return dump_json_file(&parser, options);
+	//	return dump_json_file(parser, options);
+	//case FLVMETA_FORMAT_RAW:
+	//	//return dump_raw_file(&parser, options);
+	//	return dump_raw_file(parser, options);
+	//case FLVMETA_FORMAT_XML:
+	//	//return dump_xml_file(&parser, options);
+	//	return dump_xml_file(parser, options);
+	//case FLVMETA_FORMAT_YAML:
+	//	//return dump_yaml_file(&parser, options);
+	//	return dump_yaml_file(parser, options);
+	//	////
+	case FLVMETA_FORMAT_HLS:
+		//return dump_hls_file_ex(&parser, options);
+		return fragement_hls_file_ex(parser, options);
+	default:
+		return OK;
+	}
+}
+
 /* dump AMF data directly */
 int dump_amf_data(const amf_data * data, const flvmeta_opts * options) {
     switch (options->dump_format) {

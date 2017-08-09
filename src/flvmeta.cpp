@@ -454,6 +454,8 @@ int main(int argc, char ** argv) {
 		case FLVMETA_FULL_DUMP_COMMAND:
 		{
 			errcode = dump_flv_file(&options, &parser);
+			errcode = fragment_flv_file(&options, &parser);
+			int xxx = 0;
 		}
 			break;
 		case FLVMETA_CHECK_COMMAND: errcode = check_flv_file(&options); break;

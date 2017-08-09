@@ -102,6 +102,38 @@ int flv_read_prev_tag_size(flv_stream * stream, uint32 * prev_tag_size) {
     }
 }
 
+int flv_read_prev_tag_size_ex(flv_stream * stream, uint32 * prev_tag_size, flv_tag tag) {
+
+	(void)tag;
+
+	uint32_be val;
+	if (stream == NULL
+		|| stream->flvin == NULL
+		|| feof(stream->flvin)) {
+		return FLV_ERROR_EOF;
+	}
+
+	/* skip remaining tag body bytes */
+	if (stream->state == FLV_STREAM_STATE_TAG_BODY) {
+		lfs_fseek(stream->flvin, stream->current_tag_offset + FLV_TAG_SIZE + uint24_be_to_uint32(stream->current_tag.body_length), SEEK_SET);
+		stream->state = FLV_STREAM_STATE_PREV_TAG_SIZE;
+	}
+
+	if (stream->state == FLV_STREAM_STATE_PREV_TAG_SIZE) {
+		if (fread(&val, sizeof(uint32_be), 1, stream->flvin) == 0) {
+			return FLV_ERROR_EOF;
+		}
+		else {
+			stream->state = FLV_STREAM_STATE_TAG;
+			*prev_tag_size = swap_uint32(val);
+			return FLV_OK;
+		}
+	}
+	else {
+		return FLV_ERROR_EOF;
+	}
+}
+
 int flv_read_tag(flv_stream * stream, flv_tag * tag) {
     if (stream == NULL
     || stream->flvin == NULL
@@ -666,5 +698,89 @@ int flv_parse_av_config(const char * file, flv_parser * parser, file_offset_t of
 
 	//flv_close(parser->stream);
 	flv_reset(parser->stream);
+	return FLV_OK;
+}
+
+/* FLV get AAC and H264 */
+int flv_get_raw_av(flv_parser * parser, file_offset_t offset) {
+	flv_header header;
+	flv_tag tag;
+	flv_audio_tag at;
+	flv_video_tag vt;
+	amf_data * name, *data;
+	uint32 prev_tag_size;
+	int retval;
+
+	if (parser == NULL) {
+		return FLV_ERROR_EOF;
+	}
+
+	if (parser->stream == NULL) {
+		return FLV_ERROR_OPEN_READ;
+	}
+
+	//set flv keyframe offset
+	flv_set_offset(parser->stream, offset);
+	//if setting keyframe offset, no need to read header,just read AV tags
+	if (flv_get_offset(parser->stream) == 0)
+	{
+		retval = flv_read_header(parser->stream, &header);
+		if (retval != FLV_OK) {
+			flv_close(parser->stream);
+			return retval;
+		}
+	}
+
+	while (flv_read_tag(parser->stream, &tag) == FLV_OK) {
+
+		if (tag.type == FLV_TAG_TYPE_AUDIO) {
+			retval = flv_read_audio_tag(parser->stream, &at);
+			if (retval == FLV_ERROR_EOF) {
+				flv_close(parser->stream);
+				return retval;
+			}
+			if (retval != FLV_ERROR_EMPTY_TAG && parser->on_audio_tag != NULL) {
+				retval = parser->on_audio_tag(&tag, at, parser);
+				if (retval != FLV_OK) {
+					flv_close(parser->stream);
+					return retval;
+				}
+			}
+		}
+		else if (tag.type == FLV_TAG_TYPE_VIDEO) {
+			retval = flv_read_video_tag(parser->stream, &vt);
+			if (retval == FLV_ERROR_EOF) {
+				flv_close(parser->stream);
+				return retval;
+			}
+			if (retval != FLV_ERROR_EMPTY_TAG && parser->on_video_tag != NULL) {
+				retval = parser->on_video_tag(&tag, vt, parser);
+				if (retval != FLV_OK) {
+					flv_close(parser->stream);
+					return retval;
+				}
+			}
+		}
+		else if (tag.type == FLV_TAG_TYPE_META) {
+			name = data = NULL;
+			retval = flv_read_metadata(parser->stream, &name, &data);
+			if (retval == FLV_ERROR_EOF) {
+				amf_data_free(name);
+				amf_data_free(data);
+				flv_close(parser->stream);
+				return retval;
+			}
+			amf_data_free(name);
+			amf_data_free(data);
+		}
+
+		retval = flv_read_prev_tag_size_ex(parser->stream, &prev_tag_size, tag);
+		if (retval != FLV_OK) {
+			flv_close(parser->stream);
+			return retval;
+		}
+	}
+
+	flv_close(parser->stream);
 	return FLV_OK;
 }

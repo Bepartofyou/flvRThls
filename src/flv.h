@@ -191,7 +191,14 @@ typedef struct __flv_stream {
 	std::vector<double> keyframePos;
 	std::vector<double> keyframeTs;
 	
-	
+	FILE * aac;
+	uint8_t* aac_buffer;
+	uint32_t aac_buf_max;
+	int aac_header_count;
+	FILE * h264;
+	uint8_t* h264_buffer;
+	uint32_t h264_buf_max;
+	int h264_header_count;
 
     FILE * flvin;
     uint8 state;
@@ -205,6 +212,7 @@ typedef struct __flv_stream {
 flv_stream * flv_open(const char * file);
 int flv_read_header(flv_stream * stream, flv_header * header);
 int flv_read_prev_tag_size(flv_stream * stream, uint32 * prev_tag_size);
+int flv_read_prev_tag_size_ex(flv_stream * stream, uint32 * prev_tag_size, flv_tag tag);
 int flv_read_tag(flv_stream * stream, flv_tag * tag);
 int flv_read_audio_tag(flv_stream * stream, flv_audio_tag * tag);
 int flv_read_video_tag(flv_stream * stream, flv_video_tag * tag);
@@ -241,6 +249,7 @@ typedef struct __flv_parser {
 
 int flv_parse(const char * file, flv_parser * parser, file_offset_t offset);
 int flv_parse_av_config(const char * file, flv_parser * parser, file_offset_t offset);
+int flv_get_raw_av(flv_parser * parser, file_offset_t offset);
 
 #ifdef __cplusplus
 }
