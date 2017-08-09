@@ -55,6 +55,10 @@ typedef struct __uint24 {
     uint8 b[3];
 } uint24, uint24_be, uint24_le;
 
+typedef struct __uint32 {
+	uint8 b[4];
+} uint32_nal;
+
 typedef uint64_t uint64, uint64_le, uint64_be;
 
 typedef int64_t sint64, sint64_le, sint64_be;
@@ -104,6 +108,9 @@ number64 swap_number64(number64);
 /* convert big endian 24 bits integers to native integers */
 # define uint24_be_to_uint32(x) ((uint32)(((x).b[0] << 16) | \
     ((x).b[1] << 8) | (x).b[2]))
+
+# define uint32_be_to_uint32(x) ((uint32)(((x).b[0] << 24) | \
+    ((x).b[1] << 16) | ((x).b[2] << 8) | (x).b[3]))
 
 /* convert native integers into 24 bits big endian integers */
 uint24_be uint32_to_uint24_be(uint32);

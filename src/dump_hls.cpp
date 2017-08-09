@@ -119,10 +119,10 @@ static int hls_on_video_tag(flv_tag * tag, flv_video_tag vt, flv_parser * parser
 
 static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * parser) {
 
-	return OK;
+	//return OK;
 
-	printf("* Video codec: %s\n", dump_string_get_video_codec(vt));
-	printf("* Video frame type: %s\n", dump_string_get_video_frame_type(vt));
+	//printf("* Video codec: %s\n", dump_string_get_video_codec(vt));
+	//printf("* Video frame type: %s\n", dump_string_get_video_frame_type(vt));
 
 	/* if AVC, detect frame type and composition time */
 	if (flv_video_tag_codec_id(vt) == FLV_VIDEO_TAG_CODEC_AVC) {
@@ -133,26 +133,73 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 			return ERROR_INVALID_TAG;
 		}
 
-		printf("* AVC packet type: %s\n", dump_string_get_avc_packet_type(type));
+		//printf("* AVC packet type: %s\n", dump_string_get_avc_packet_type(type));
 
-		/* composition time */
+		/* sequence header */
 		if (type == FLV_AVC_PACKET_TYPE_SEQUENCE_HEADER) {
 
+			printf("1111111111111111111\n");
 			read_avc_sps_pps(parser);
 
-			parser->stream->flag_videoconfig = true;
+			parser->stream->h264_header_count++;
+
+			if (parser->stream->h264 == NULL){
+				std::string h264_name = num2str(parser->stream->h264_header_count) + ".h264";
+				parser->stream->h264 = fopen(h264_name.c_str(), "wb");
+			}
+			else{
+				fclose(parser->stream->h264);
+
+				std::string h264_name = num2str(parser->stream->h264_header_count) + ".h264";
+				parser->stream->h264 = fopen(h264_name.c_str(), "wb");
+			}
 		}
+		else{
+			if (parser->stream->h264){
 
-		///* composition time */
-		//if (type == FLV_AVC_PACKET_TYPE_NALU) {
-		//    uint24_be composition_time;
+				if (parser->stream->h264_buffer == NULL){
 
-		//    if (flv_read_tag_body(parser->stream, &composition_time, sizeof(uint24_be)) < sizeof(uint24_be)) {
-		//        return ERROR_INVALID_TAG;
-		//    }
+					parser->stream->h264_buf_max = uint24_be_to_uint32(tag->body_length);
+					parser->stream->h264_buffer = (uint8_t*)malloc(sizeof(uint8_t)*parser->stream->h264_buf_max);
+				}
+				else
+				{
+					if (parser->stream->h264_buf_max < uint24_be_to_uint32(tag->body_length))
+					{
+						parser->stream->h264_buf_max = uint24_be_to_uint32(tag->body_length);
+						parser->stream->h264_buffer = (uint8_t*)realloc(parser->stream->h264_buffer, parser->stream->h264_buf_max);
+					}
+				}
 
-		//    printf("* Composition time offset: %i\n", uint24_be_to_uint32(composition_time));
-		//}
+				/* read the composition time */
+				uint24 composition_time;
+				if (flv_read_tag_body(parser->stream, &composition_time, sizeof(uint24)) < sizeof(uint24)) {
+					return FLV_ERROR_EOF;
+				}
+
+				/* read raw h264 */
+				uint8_t statcode[4] = { 0, 0, 0, 1 };
+				while (parser->stream->current_tag_body_length > 4)
+				{
+					uint32_nal nalusize = { 0 };
+					if (flv_read_tag_body(parser->stream, &nalusize, sizeof(uint32_t)) < sizeof(uint32_t)) {
+						return FLV_ERROR_EOF;
+					}
+
+					int x = uint32_be_to_uint32(nalusize);
+					fwrite(statcode, 4, 1, parser->stream->h264);
+
+					if (flv_read_tag_body(parser->stream, parser->stream->h264_buffer, uint32_be_to_uint32(nalusize)) < uint32_be_to_uint32(nalusize)) {
+						return ERROR_INVALID_TAG;
+					}
+
+					fwrite(parser->stream->h264_buffer, uint32_be_to_uint32(nalusize), 1, parser->stream->h264);
+				}
+
+				if (parser->stream->current_tag_body_length != 0)
+					printf("2222222222: %d\n", parser->stream->current_tag_body_length);
+			}
+		}
 	}
 
 	return OK;
