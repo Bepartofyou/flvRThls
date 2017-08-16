@@ -3,7 +3,6 @@
  * Copyright (C) Roman Arutyunyan
  */
 #include <stdio.h>
-#include <string.h>
 #include "mpegts.h"
 
 
@@ -288,7 +287,7 @@ ngx_rtmp_mpegts_write_frame(ngx_rtmp_mpegts_file_t *file,
         in_size = (ngx_uint_t) (b->last - b->pos);
 
         if (body_size <= in_size) {
-			memcpy(p, b->pos, body_size);
+			ngx_memcpy(p, b->pos, body_size);
             b->pos += body_size;
 
         } else {
@@ -318,7 +317,7 @@ ngx_rtmp_mpegts_write_frame(ngx_rtmp_mpegts_file_t *file,
                 }
             }
 
-			memcpy(p, b->pos, in_size);
+			ngx_memcpy(p, b->pos, in_size);
             b->pos = b->last;
         }
 

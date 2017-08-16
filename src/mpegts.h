@@ -3,6 +3,7 @@
  * Copyright (C) Roman Arutyunyan
  */
 #include <stdio.h>
+#include <string.h>
 
 //#include <openssl/aes.h>
 
@@ -16,6 +17,10 @@
 #define uint64_t unsigned __int64
 #endif
 
+#ifndef int64_t
+#define int64_t __int64
+#endif
+
 #ifndef off_t
 #define off_t long
 #endif
@@ -24,11 +29,30 @@
 #define ssize_t  __int64
 #endif
 
+#ifndef int8_t
+#define int8_t  signed char
+#endif
+
+#ifndef uint8_t
+#define uint8_t  unsigned char
+#endif
+
+#ifndef uint32_t
+#define uint32_t  unsigned int
+#endif
+
+#ifndef uint16_t
+#define uint16_t  unsigned short
+#endif
+
 #endif //win32
 
 typedef intptr_t        ngx_int_t;
 typedef uintptr_t       ngx_uint_t;
 typedef intptr_t        ngx_flag_t;
+
+typedef ngx_uint_t      ngx_msec_t;
+typedef ngx_int_t       ngx_msec_int_t;
 
 #define  NGX_OK          0
 #define  NGX_ERROR      -1
@@ -45,6 +69,8 @@ typedef intptr_t        ngx_flag_t;
 
 /* msvc and icc7 compile memcmp() to the inline loop */
 #define ngx_memcmp(s1, s2, n)  memcmp((const char *) s1, (const char *) s2, n)
+#define ngx_memcpy(dst, src, n)   (void) memcpy(dst, src, n)
+#define ngx_cpymem(dst, src, n)   (((u_char *) memcpy(dst, src, n)) + (n))
 
 
 typedef struct {
