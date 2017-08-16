@@ -14,36 +14,11 @@
 
 #ifdef WIN32
 
-#ifndef uint64_t
-#define uint64_t unsigned __int64
-#endif
-
-#ifndef int64_t
-#define int64_t __int64
-#endif
-
 #ifndef off_t
 #define off_t long
 #endif
-
 #ifndef ssize_t
 #define ssize_t  __int64
-#endif
-
-#ifndef int8_t
-#define int8_t  signed char
-#endif
-
-#ifndef uint8_t
-#define uint8_t  unsigned char
-#endif
-
-#ifndef uint32_t
-#define uint32_t  unsigned int
-#endif
-
-#ifndef uint16_t
-#define uint16_t  unsigned short
 #endif
 
 #endif //win32
