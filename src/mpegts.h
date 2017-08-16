@@ -8,12 +8,11 @@
 
 
 //#include <openssl/aes.h>
-
-#ifdef WIN32
-
 #ifndef u_char
 #define u_char unsigned char
 #endif
+
+#ifdef WIN32
 
 #ifndef uint64_t
 #define uint64_t unsigned __int64
