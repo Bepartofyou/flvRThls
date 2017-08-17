@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "hls_module.h"
 
+#if 0
 
 static inline ngx_int_t
 ngx_rtmp_is_codec_header(ngx_chain_t *in)
@@ -780,3 +781,5 @@ ngx_rtmp_hls_merge_app_conf(ngx_rtmp_hls_app_conf_t *parent)
 	parent->max_audio_delay = 300;
 	parent->audio_buffer_size = NGX_RTMP_HLS_BUFSIZE;
 }
+
+#endif

@@ -10,6 +10,8 @@
 #define NGX_RTMP_HLS_DIR_ACCESS         0744
 
 
+#if 0
+
 typedef struct {
     uint64_t                            id;
     uint64_t                            key_id;
@@ -193,3 +195,6 @@ ngx_rtmp_hls_update_fragment(uint64_t ts, ngx_int_t boundary, ngx_uint_t flush_r
 
 static void
 ngx_rtmp_hls_merge_app_conf(void *parent, void *child);
+
+
+#endif
