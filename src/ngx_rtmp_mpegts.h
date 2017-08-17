@@ -7,7 +7,7 @@
 
 #ifdef WIN32
 
-#include <windows.h>
+#include "ngx_win32_config.h"
 #ifndef off_t
 #define off_t long
 #endif
@@ -16,7 +16,7 @@
 #endif
 
 #else
-
+#include "ngx_linux_config.h"
 #ifndef u_char
 #define u_char unsigned char
 #endif
