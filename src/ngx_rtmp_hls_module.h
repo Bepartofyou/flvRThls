@@ -177,6 +177,9 @@ typedef DWORD               ngx_pid_t;
 typedef int32_t                     ngx_atomic_int_t;
 typedef uint32_t                    ngx_atomic_uint_t;
 #else
+#include<sys/types.h>
+#include<time.h>
+#include<string.h>
 #define ngx_rename_file(o, n)    rename((const char *) o, (const char *) n)
 typedef pid_t       ngx_pid_t;
 #define NGX_INT_T_LEN   NGX_INT64_LEN
