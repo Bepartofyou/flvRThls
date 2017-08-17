@@ -171,6 +171,10 @@ typedef struct {
 	int                             silent;
 } ngx_rtmp_publish_t;
 
+typedef struct {
+	double                          stream;
+} ngx_rtmp_close_stream_t;
+
 #define NGX_RTMP_HLS_NAMING_SEQUENTIAL  1
 #define NGX_RTMP_HLS_NAMING_TIMESTAMP   2
 #define NGX_RTMP_HLS_NAMING_SYSTEM      3
@@ -296,6 +300,14 @@ static void
 ngx_rtmp_hls_restore_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
 static ngx_int_t
 ngx_rtmp_hls_publish(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_publish_t *v);
+static ngx_int_t
+ngx_rtmp_hls_close_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_close_stream_t *v);
+static ngx_int_t
+ngx_rtmp_hls_parse_aac_header(ngx_rtmp_codec_ctx_t *codec_ctx, ngx_uint_t *objtype,
+ngx_uint_t *srindex, ngx_uint_t *chconf);
+static void
+ngx_rtmp_hls_update_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts,
+ngx_int_t boundary, ngx_uint_t flush_rate);
 
 
 static u_char *
