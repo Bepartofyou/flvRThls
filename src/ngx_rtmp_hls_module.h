@@ -175,6 +175,45 @@ typedef struct {
 	double                          stream;
 } ngx_rtmp_close_stream_t;
 
+typedef struct {
+	uint32_t                csid;       /* chunk stream id */
+	uint32_t                timestamp;  /* timestamp (delta) */
+	uint32_t                mlen;       /* message length */
+	uint8_t                 type;       /* message type id */
+	uint32_t                msid;       /* message stream id */
+} ngx_rtmp_header_t;
+
+/* Audio codecs */
+enum {
+	/* Uncompressed codec id is actually 0,
+	* but we use another value for consistency */
+	NGX_RTMP_AUDIO_UNCOMPRESSED = 16,
+	NGX_RTMP_AUDIO_ADPCM = 1,
+	NGX_RTMP_AUDIO_MP3 = 2,
+	NGX_RTMP_AUDIO_LINEAR_LE = 3,
+	NGX_RTMP_AUDIO_NELLY16 = 4,
+	NGX_RTMP_AUDIO_NELLY8 = 5,
+	NGX_RTMP_AUDIO_NELLY = 6,
+	NGX_RTMP_AUDIO_G711A = 7,
+	NGX_RTMP_AUDIO_G711U = 8,
+	NGX_RTMP_AUDIO_AAC = 10,
+	NGX_RTMP_AUDIO_SPEEX = 11,
+	NGX_RTMP_AUDIO_MP3_8 = 14,
+	NGX_RTMP_AUDIO_DEVSPEC = 15,
+};
+
+
+/* Video codecs */
+enum {
+	NGX_RTMP_VIDEO_JPEG = 1,
+	NGX_RTMP_VIDEO_SORENSON_H263 = 2,
+	NGX_RTMP_VIDEO_SCREEN = 3,
+	NGX_RTMP_VIDEO_ON2_VP6 = 4,
+	NGX_RTMP_VIDEO_ON2_VP6_ALPHA = 5,
+	NGX_RTMP_VIDEO_SCREEN2 = 6,
+	NGX_RTMP_VIDEO_H264 = 7
+};
+
 #define NGX_RTMP_HLS_NAMING_SEQUENTIAL  1
 #define NGX_RTMP_HLS_NAMING_TIMESTAMP   2
 #define NGX_RTMP_HLS_NAMING_SYSTEM      3
@@ -308,6 +347,22 @@ ngx_uint_t *srindex, ngx_uint_t *chconf);
 static void
 ngx_rtmp_hls_update_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts,
 ngx_int_t boundary, ngx_uint_t flush_rate);
+static ngx_int_t
+ngx_rtmp_hls_flush_audio(ngx_rtmp_hls_ctx_t *ctx);
+static ngx_int_t
+ngx_rtmp_hls_audio(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_header_t *h,
+ngx_chain_t *in);
+static ngx_int_t
+ngx_rtmp_hls_video(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_header_t *h,
+ngx_chain_t *in);
+static ngx_int_t
+ngx_rtmp_hls_stream_begin();
+static ngx_int_t
+ngx_rtmp_hls_stream_eof(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
+static ngx_int_t
+ngx_rtmp_hls_cleanup_dir(ngx_str_t *ppath, ngx_msec_t playlen);
+static time_t
+ngx_rtmp_hls_cleanup(void *data);
 
 
 static u_char *
