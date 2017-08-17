@@ -169,6 +169,7 @@ typedef struct {
 #define NGX_RTMP_HLS_TYPE_EVENT         2
 
 #if (WIN32)
+#include "ngx_win32_config.h"
 typedef DWORD               ngx_pid_t;
 #define ngx_rename_file(o, n)    MoveFile((const char *) o, (const char *) n)
 #define NGX_INT_T_LEN   NGX_INT32_LEN
@@ -177,9 +178,7 @@ typedef DWORD               ngx_pid_t;
 typedef int32_t                     ngx_atomic_int_t;
 typedef uint32_t                    ngx_atomic_uint_t;
 #else
-#include<sys/types.h>
-#include<time.h>
-#include<string.h>
+#include "ngx_linux_config.h"
 #define ngx_rename_file(o, n)    rename((const char *) o, (const char *) n)
 typedef pid_t       ngx_pid_t;
 #define NGX_INT_T_LEN   NGX_INT64_LEN
