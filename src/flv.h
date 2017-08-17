@@ -30,6 +30,8 @@
 #include "types.h"
 #include "amf.h"
 
+#include "ngx_rtmp_hls_module.h"
+
 /* error statuses */
 #define FLV_OK                          0
 #define FLV_ERROR_OPEN_READ             1
@@ -255,6 +257,8 @@ size_t flv_write_tag(FILE * out, const flv_tag * tag);
 /* FLV event based parser */
 typedef struct __flv_parser {
     flv_stream * stream;
+	CHlsModule* hlsmodule;
+
     void * user_data;
     int (* on_header)(flv_header * header, struct __flv_parser * parser);
     int (* on_tag)(flv_tag * tag, struct __flv_parser * parser);

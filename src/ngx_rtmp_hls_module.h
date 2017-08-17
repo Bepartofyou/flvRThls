@@ -3,20 +3,6 @@
 
 #include "ngx_rtmp_mpegts.h"
 
-#if 0
-
-class CHlsModule
-{
-public:
-	CHlsModule();
-	~CHlsModule();
-
-private:
-
-};
-
-#else
-
 #define NGX_RTMP_HLS_BUFSIZE            (1024*1024)
 #define NGX_RTMP_HLS_DIR_ACCESS         0744
 
@@ -311,6 +297,27 @@ typedef struct {
 //static ngx_int_t ngx_rtmp_hls_ensure_directory(ngx_rtmp_session_t *s,
 //	ngx_str_t *path);
 
+class CHlsModule
+{
+private:
+	CHlsModule();
+public:
+	virtual ~CHlsModule();
+
+public:
+	static CHlsModule* getInstance();
+	static void destoryInstance();
+
+private:
+	static CHlsModule* m_instance;
+
+private:
+	ngx_rtmp_hls_ctx_t       ctx;
+	ngx_rtmp_codec_ctx_t     codec_ctx;
+	ngx_rtmp_hls_app_conf_t  hacf;
+};
+
+
 
 static ngx_rtmp_hls_frag_t *
 ngx_rtmp_hls_get_frag(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_int_t n);
@@ -373,8 +380,5 @@ static u_char *
 ngx_vslprintf(u_char *buf, u_char *last, const char *fmt, va_list args);
 static u_char *
 ngx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64, u_char zero, ngx_uint_t hexadecimal, ngx_uint_t width);
-
-
-#endif
 
 #endif /* _HLS_MODULE_H_INCLUDED_ */

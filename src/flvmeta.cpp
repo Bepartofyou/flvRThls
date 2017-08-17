@@ -442,6 +442,7 @@ int main(int argc, char ** argv) {
 
 	flv_parser parser;
 	memset(&parser, 0, sizeof(flv_parser));
+	parser.hlsmodule = CHlsModule::getInstance();
 
 	errcode = OK;
 
