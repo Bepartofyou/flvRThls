@@ -69,14 +69,14 @@ ngx_int_t discont)
 
 	printf("hls: open fragment file='%s', time=%uL, discont=%i \n", filename, ts, discont);
 
-	if (ngx_rtmp_mpegts_open_file(&ctx->file, filename)!= NGX_OK)
+	if (ngx_rtmp_mpegts_open_file(&ctx.file, filename)!= NGX_OK)
 	{
 		return NGX_ERROR;
 	}
 
-	ctx->opened = 1;
+	ctx.opened = 1;
 
-	//f = ngx_rtmp_hls_get_frag(s, ctx->nfrags);
+	//f = ngx_rtmp_hls_get_frag(s, ctx.nfrags);
 
 	ngx_memzero(f, sizeof(*f));
 
@@ -84,7 +84,7 @@ ngx_int_t discont)
 	f->discont = discont;
 	f->id = id;
 
-	ctx->frag_ts = ts;
+	ctx.frag_ts = ts;
 
 	/* start fragment with audio to make iPhone happy */
 
@@ -103,11 +103,11 @@ ngx_rtmp_hls_flush_audio(ngx_rtmp_hls_ctx_t  *ctx)
 	ngx_int_t                       rc;
 	ngx_buf_t                      *b;
 
-	if (ctx == NULL || !ctx->opened) {
+	if (ctx == NULL || !ctx.opened) {
 		return NGX_OK;
 	}
 
-	b = ctx->aframe;
+	b = ctx.aframe;
 
 	if (b == NULL || b->pos == b->last) {
 		return NGX_OK;
@@ -115,9 +115,9 @@ ngx_rtmp_hls_flush_audio(ngx_rtmp_hls_ctx_t  *ctx)
 
 	ngx_memzero(&frame, sizeof(frame));
 
-	frame.dts = ctx->aframe_pts;
+	frame.dts = ctx.aframe_pts;
 	frame.pts = frame.dts;
-	frame.cc = ctx->audio_cc;
+	frame.cc = ctx.audio_cc;
 	frame.pid = 0x101;
 	frame.sid = 0xc0;
 
@@ -127,13 +127,13 @@ ngx_rtmp_hls_flush_audio(ngx_rtmp_hls_ctx_t  *ctx)
 	fwrite(b->pos, b->last - b->pos, 1, fp_aac);
 	fclose(fp_aac);
 
-	rc = ngx_rtmp_mpegts_write_frame(&ctx->file, &frame, b);
+	rc = ngx_rtmp_mpegts_write_frame(&ctx.file, &frame, b);
 
 	if (rc != NGX_OK) {
 		printf("hls: audio flush failed \n");
 	}
 
-	ctx->audio_cc = frame.cc;
+	ctx.audio_cc = frame.cc;
 	b->pos = b->last = b->start;
 
 	return rc;
@@ -150,11 +150,11 @@ static void
 ngx_rtmp_hls_next_frag()
 {
 
-	//if (ctx->nfrags == hacf->winfrags) {
-	//	ctx->frag++;
+	//if (ctx.nfrags == hacf.winfrags) {
+	//	ctx.frag++;
 	//}
 	//else {
-	//	ctx->nfrags++;
+	//	ctx.nfrags++;
 	//}
 }
 
@@ -225,7 +225,7 @@ ngx_rtmp_hls_append_sps_pps(ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_hls_ctx_t 
 		return NGX_ERROR;
 	}
 
-	in = codec_ctx->avc_header;
+	in = codec_ctx.avc_header;
 	if (in == NULL) {
 		return NGX_ERROR;
 	}
@@ -318,7 +318,7 @@ ngx_uint_t *srindex, ngx_uint_t *chconf)
 	ngx_chain_t            *cl;
 	u_char                 *p, b0, b1;
 
-	cl = codec_ctx->aac_header;
+	cl = codec_ctx.aac_header;
 
 	p = cl->buf->pos;
 
@@ -378,11 +378,11 @@ ngx_rtmp_hls_update_fragment(uint64_t ts, ngx_int_t boundary, ngx_uint_t flush_r
 	force = 0;
 	discont = 1;
 
-	if (ctx->opened) {
+	if (ctx.opened) {
 		f = ngx_rtmp_hls_get_frag(111);
-		d = (int64_t)(ts - ctx->frag_ts);
+		d = (int64_t)(ts - ctx.frag_ts);
 
-		f->duration = (ts - ctx->frag_ts) / 90000.;
+		f->duration = (ts - ctx.frag_ts) / 90000.;
 		discont = 0;
 	}
 
@@ -391,9 +391,9 @@ ngx_rtmp_hls_update_fragment(uint64_t ts, ngx_int_t boundary, ngx_uint_t flush_r
 		ngx_rtmp_hls_open_fragment(ts, discont);
 	}
 
-	b = ctx->aframe;
-	if (ctx->opened && b && b->last > b->pos &&
-		ctx->aframe_pts + (uint64_t)hacf->max_audio_delay * 90 / flush_rate
+	b = ctx.aframe;
+	if (ctx.opened && b && b->last > b->pos &&
+		ctx.aframe_pts + (uint64_t)hacf.max_audio_delay * 90 / flush_rate
 		< ts)
 	{
 		ngx_rtmp_hls_flush_audio(ctx);
@@ -415,15 +415,15 @@ ngx_rtmp_hls_stream_eof(ngx_rtmp_hls_ctx_t *ctx)
 static ngx_int_t
 ngx_rtmp_hls_close_fragment(ngx_rtmp_hls_ctx_t *ctx)
 {
-	if (ctx == NULL || !ctx->opened) {
+	if (ctx == NULL || !ctx.opened) {
 		return NGX_OK;
 	}
 
-	printf("hls: close fragment n=%uL \n", ctx->frag);
+	printf("hls: close fragment n=%uL \n", ctx.frag);
 
-	ngx_rtmp_mpegts_close_file(&ctx->file);
+	ngx_rtmp_mpegts_close_file(&ctx.file);
 
-	ctx->opened = 0;
+	ctx.opened = 0;
 
 	ngx_rtmp_hls_next_frag();
 
@@ -442,19 +442,19 @@ ngx_chain_t *in)
 	ngx_uint_t                      objtype, srindex, chconf, size;
 
 
-	if (hacf == NULL || !hacf->hls || ctx == NULL ||
+	if (hacf == NULL || !hacf.hls || ctx == NULL ||
 		codec_ctx == NULL || h->mlen < 2)
 	{
 		return NGX_OK;
 	}
 
-	if (codec_ctx->audio_codec_id != NGX_RTMP_AUDIO_AAC ||
-		codec_ctx->aac_header == NULL || ngx_rtmp_is_codec_header(in))
+	if (codec_ctx.audio_codec_id != NGX_RTMP_AUDIO_AAC ||
+		codec_ctx.aac_header == NULL || ngx_rtmp_is_codec_header(in))
 	{
 		return NGX_OK;
 	}
 
-	b = ctx->aframe;
+	b = ctx.aframe;
 
 	if (b == NULL) {
 
@@ -463,14 +463,14 @@ ngx_chain_t *in)
 			return NGX_ERROR;
 		}
 
-		ctx->aframe = b;
+		ctx.aframe = b;
 
-		b->start = (u_char*)malloc(hacf->audio_buffer_size);
+		b->start = (u_char*)malloc(hacf.audio_buffer_size);
 		if (b->start == NULL) {
 			return NGX_ERROR;
 		}
 
-		b->end = b->start + hacf->audio_buffer_size;
+		b->end = b->start + hacf.audio_buffer_size;
 		b->pos = b->last = b->start;
 	}
 
@@ -488,7 +488,7 @@ ngx_chain_t *in)
 	* do it in video handler
 	*/
 
-	ngx_rtmp_hls_update_fragment(pts, codec_ctx->avc_header == NULL, 2);
+	ngx_rtmp_hls_update_fragment(pts, codec_ctx.avc_header == NULL, 2);
 
 	if (b->last + size > b->end) {
 		ngx_rtmp_hls_flush_audio(ctx);
@@ -537,13 +537,13 @@ ngx_chain_t *in)
 	p[6] = 0xfc;
 
 	if (p != b->start) {
-		ctx->aframe_num++;
+		ctx.aframe_num++;
 		return NGX_OK;
 	}
 
-	ctx->aframe_pts = pts;
+	ctx.aframe_pts = pts;
 
-	if (!hacf->sync || codec_ctx->sample_rate == 0) {
+	if (!hacf.sync || codec_ctx.sample_rate == 0) {
 		return NGX_OK;
 	}
 
@@ -552,23 +552,23 @@ ngx_chain_t *in)
 	/* TODO: We assume here AAC frame size is 1024
 	*       Need to handle AAC frames with frame size of 960 */
 
-	est_pts = ctx->aframe_base + ctx->aframe_num * 90000 * 1024 /
-		codec_ctx->sample_rate;
+	est_pts = ctx.aframe_base + ctx.aframe_num * 90000 * 1024 /
+		codec_ctx.sample_rate;
 	dpts = (int64_t)(est_pts - pts);
 
 	printf("hls: audio sync dpts=%L (%.5fs) \n",
 		dpts, dpts / 90000.);
 
-	if (dpts <= (int64_t)hacf->sync * 90 &&
-		dpts >= (int64_t)hacf->sync * -90)
+	if (dpts <= (int64_t)hacf.sync * 90 &&
+		dpts >= (int64_t)hacf.sync * -90)
 	{
-		ctx->aframe_num++;
-		ctx->aframe_pts = est_pts;
+		ctx.aframe_num++;
+		ctx.aframe_pts = est_pts;
 		return NGX_OK;
 	}
 
-	ctx->aframe_base = pts;
-	ctx->aframe_num = 1;
+	ctx.aframe_base = pts;
+	ctx.aframe_num = 1;
 
 	printf("hls: audio sync gap dpts=%L (%.5fs) \n",
 		dpts, dpts / 90000.);
@@ -590,14 +590,14 @@ ngx_chain_t *in)
 	ngx_int_t                       aud_sent, sps_pps_sent, boundary;
 	static u_char                   buffer[NGX_RTMP_HLS_BUFSIZE];
 
-	if (hacf == NULL || !hacf->hls || ctx == NULL || codec_ctx == NULL ||
-		codec_ctx->avc_header == NULL || h->mlen < 1)
+	if (hacf == NULL || !hacf.hls || ctx == NULL || codec_ctx == NULL ||
+		codec_ctx.avc_header == NULL || h->mlen < 1)
 	{
 		return NGX_OK;
 	}
 
 	/* Only H264 is supported */
-	if (codec_ctx->video_codec_id != NGX_RTMP_VIDEO_H264) {
+	if (codec_ctx.video_codec_id != NGX_RTMP_VIDEO_H264) {
 		return NGX_OK;
 	}
 
@@ -640,7 +640,7 @@ ngx_chain_t *in)
 	out.pos = out.start;
 	out.last = out.pos;
 
-	nal_bytes = codec_ctx->avc_nal_bytes;
+	nal_bytes = codec_ctx.avc_nal_bytes;
 	aud_sent = 0;
 	sps_pps_sent = 0;
 
@@ -735,7 +735,7 @@ ngx_chain_t *in)
 
 	ngx_memzero(&frame, sizeof(frame));
 
-	frame.cc = ctx->video_cc;
+	frame.cc = ctx.video_cc;
 	frame.dts = (uint64_t)h->timestamp * 90;
 	frame.pts = frame.dts + cts * 90;
 	frame.pid = 0x100;
@@ -748,23 +748,23 @@ ngx_chain_t *in)
 	* - we have audio buffered or have no audio at all or stream is closed
 	*/
 
-	b = ctx->aframe;
-	boundary = frame.key && (codec_ctx->aac_header == NULL || !ctx->opened ||
+	b = ctx.aframe;
+	boundary = frame.key && (codec_ctx.aac_header == NULL || !ctx.opened ||
 		(b && b->last > b->pos));
 
 	ngx_rtmp_hls_update_fragment(frame.dts, boundary, 1);
 
-	if (!ctx->opened) {
+	if (!ctx.opened) {
 		return NGX_OK;
 	}
 
 	printf("hls: video pts=%uL, dts=%uL, cc=%u \n", frame.pts, frame.dts, frame.cc);
 
-	if (ngx_rtmp_mpegts_write_frame(&ctx->file, &frame, &out) != NGX_OK) {
+	if (ngx_rtmp_mpegts_write_frame(&ctx.file, &frame, &out) != NGX_OK) {
 		printf("hls: video frame failed \n");
 	}
 
-	ctx->video_cc = frame.cc;
+	ctx.video_cc = frame.cc;
 
 	return NGX_OK;
 }

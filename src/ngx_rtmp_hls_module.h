@@ -337,9 +337,9 @@ private:
 	ngx_int_t ngx_rtmp_hls_append_aud(ngx_buf_t *out);
 	ngx_int_t ngx_rtmp_hls_append_sps_pps(ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_hls_ctx_t *ctx, ngx_buf_t *out);
 	uint64_t ngx_rtmp_hls_get_fragment_id(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts);
-	ngx_int_t ngx_rtmp_hls_close_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
+	
 	ngx_int_t ngx_rtmp_hls_ensure_directory(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_str_t *path);
-	ngx_int_t ngx_rtmp_hls_open_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts, ngx_int_t discont);
+	
 	void ngx_rtmp_hls_restore_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
 	ngx_int_t ngx_rtmp_hls_publish(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_publish_t *v);
 	ngx_int_t ngx_rtmp_hls_close_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_close_stream_t *v);
@@ -351,11 +351,20 @@ private:
 	ngx_int_t ngx_rtmp_hls_cleanup_dir(ngx_str_t *ppath, ngx_msec_t playlen);
 	time_t ngx_rtmp_hls_cleanup(void *data);
 public:
+	ngx_int_t ngx_rtmp_hls_open_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts, ngx_int_t discont);
+	ngx_int_t ngx_rtmp_hls_close_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
 	ngx_int_t ngx_rtmp_hls_flush_audio(ngx_rtmp_hls_ctx_t *ctx);
 	ngx_int_t ngx_rtmp_hls_audio(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_header_t *h,
 		ngx_chain_t *in);
-    ngx_int_t ngx_rtmp_hls_video(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_header_t *h,
+	ngx_int_t ngx_rtmp_hls_video(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_header_t *h,
 		ngx_chain_t *in);
+
+	///////
+	ngx_int_t ngx_rtmp_hls_open_fragment_ex(uint64_t ts, ngx_int_t discont);
+	ngx_int_t ngx_rtmp_hls_close_fragment_ex();
+	ngx_int_t ngx_rtmp_hls_flush_audio_ex();
+	ngx_int_t ngx_rtmp_hls_audio_ex(ngx_rtmp_header_t *h, ngx_chain_t *in);
+	ngx_int_t ngx_rtmp_hls_video_ex(ngx_rtmp_header_t *h,ngx_chain_t *in);
 };
 
 #endif /* _HLS_MODULE_H_INCLUDED_ */
