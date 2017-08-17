@@ -35,6 +35,21 @@ ngx_sprintf(u_char *buf, const char *fmt, ...)
 	return p;
 }
 
+static inline u_char *
+ngx_strlchr(u_char *p, u_char *last, u_char c)
+{
+	while (p < last) {
+
+		if (*p == c) {
+			return p;
+		}
+
+		p++;
+	}
+
+	return NULL;
+}
+
 ////////////////////////////////
 
 static ngx_rtmp_hls_frag_t *
@@ -471,6 +486,7 @@ ngx_rtmp_hls_ensure_directory(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *
 {
 	size_t                    len;
 	ngx_file_info_t           fi;
+	(void)fi;
 
 	static u_char  zpath[NGX_MAX_PATH + 1];
 
@@ -675,6 +691,189 @@ ngx_int_t discont)
 	return NGX_OK;
 }
 
+static void
+ngx_rtmp_hls_restore_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf)
+{
+	ngx_file_t                      file;
+	ssize_t                         ret;
+	off_t                           offset;
+	u_char                         *p, *last, *end, *next, *pa, *pp, c;
+	ngx_rtmp_hls_frag_t            *f;
+	double                          duration;
+	ngx_int_t                       discont;
+	uint64_t                        mag, key_id, base;
+	static u_char                   buffer[4096];
+
+	ngx_memzero(&file, sizeof(file));
+
+	ngx_str_set(&file.name, "m3u8");
+
+	file.fd = fopen((const char*)ctx->playlist.data, "wb");
+	if (file.fd == NULL) {
+		return;
+	}
+
+	offset = 0;
+	ctx->nfrags = 0;
+	f = NULL;
+	duration = 0;
+	discont = 0;
+	key_id = 0;
+
+	for ( ;; ) {
+
+		//ret = ngx_read_file(&file, buffer, sizeof(buffer), offset);
+		fseek(file.fd, offset, SEEK_SET);
+		ret = fread(buffer, sizeof(buffer), 1, file.fd);
+		if (ret <= 0) {
+			goto done;
+		}
+
+		p = buffer;
+		end = buffer + ret;
+
+		for ( ;; ) {
+			last = ngx_strlchr(p, end, '\n');
+
+			if (last == NULL) {
+				if (p == buffer) {
+					goto done;
+				}
+				break;
+			}
+
+			next = last + 1;
+			offset += (next - p);
+
+			if (p != last && last[-1] == '\r') {
+				last--;
+			}
+
+
+#define NGX_RTMP_MSEQ           "#EXT-X-MEDIA-SEQUENCE:"
+#define NGX_RTMP_MSEQ_LEN       (sizeof(NGX_RTMP_MSEQ) - 1)
+
+
+			if (ngx_memcmp(p, NGX_RTMP_MSEQ, NGX_RTMP_MSEQ_LEN) == 0) {
+
+				ctx->frag = (uint64_t) strtod((const char *)
+					&p[NGX_RTMP_MSEQ_LEN], NULL);
+
+				printf("hls: restore sequence frag=%uL  \n", ctx->frag);
+			}
+
+
+#define NGX_RTMP_XKEY           "#EXT-X-KEY:"
+#define NGX_RTMP_XKEY_LEN       (sizeof(NGX_RTMP_XKEY) - 1)
+
+			if (ngx_memcmp(p, NGX_RTMP_XKEY, NGX_RTMP_XKEY_LEN) == 0) {
+
+				/* recover key id from initialization vector */
+
+				key_id = 0;
+				base = 1;
+				pp = last - 1;
+
+				for ( ;; ) {
+					if (pp < p) {
+						printf("hls: failed to read key id  \n");
+						break;
+					}
+
+					c = *pp;
+					if (c == 'x') {
+						break;
+					}
+
+					if (c >= '0' && c <= '9') {
+						c -= '0';
+						goto next;
+					}
+
+					c |= 0x20;
+
+					if (c >= 'a' && c <= 'f') {
+						c -= 'a' - 10;
+						goto next;
+					}
+
+					printf("hls: bad character in key id  \n");
+					break;
+
+				next:
+
+					key_id += base * c;
+					base *= 0x10;
+					pp--;
+				}
+			}
+
+
+#define NGX_RTMP_EXTINF         "#EXTINF:"
+#define NGX_RTMP_EXTINF_LEN     (sizeof(NGX_RTMP_EXTINF) - 1)
+
+
+			if (ngx_memcmp(p, NGX_RTMP_EXTINF, NGX_RTMP_EXTINF_LEN) == 0) {
+
+				duration = strtod((const char *) &p[NGX_RTMP_EXTINF_LEN], NULL);
+
+				printf("hls: restore durarion=%.3f  \n", duration);
+			}
+
+
+#define NGX_RTMP_DISCONT        "#EXT-X-DISCONTINUITY"
+#define NGX_RTMP_DISCONT_LEN    (sizeof(NGX_RTMP_DISCONT) - 1)
+
+
+			if (ngx_memcmp(p, NGX_RTMP_DISCONT, NGX_RTMP_DISCONT_LEN) == 0) {
+
+				discont = 1;
+
+				printf("hls: discontinuity  \n");
+			}
+
+			/* find '.ts\r' */
+
+			if (p + 4 <= last &&
+				last[-3] == '.' && last[-2] == 't' && last[-1] == 's')
+			{
+				f = ngx_rtmp_hls_get_frag(ctx, hacf, ctx->nfrags);
+
+				ngx_memzero(f, sizeof(*f));
+
+				f->duration = duration;
+				f->discont = discont;
+				f->active = 1;
+				f->id = 0;
+
+				discont = 0;
+
+				mag = 1;
+				for (pa = last - 4; pa >= p; pa--) {
+					if (*pa < '0' || *pa > '9') {
+						break;
+					}
+					f->id += (*pa - '0') * mag;
+					mag *= 10;
+				}
+
+				f->key_id = key_id;
+
+				ngx_rtmp_hls_next_frag(ctx, hacf);
+
+				printf("hls: restore fragment '%*s' id=%uL, "
+					"duration=%.3f, frag=%uL, nfrags=%ui  \n",
+					(size_t) (last - p), p, f->id, f->duration,
+					ctx->frag, ctx->nfrags);
+			}
+
+			p = next;
+		}
+	}
+
+done:
+	fclose(file.fd);
+}
 
 #if 0
 CHlsModule::CHlsModule()
@@ -695,199 +894,7 @@ CHlsModule::~CHlsModule()
 
 
 
-static void
-ngx_rtmp_hls_restore_stream(ngx_rtmp_session_t *s)
-{
-    ngx_rtmp_hls_ctx_t             *ctx;
-    ngx_file_t                      file;
-    ssize_t                         ret;
-    off_t                           offset;
-    u_char                         *p, *last, *end, *next, *pa, *pp, c;
-    ngx_rtmp_hls_frag_t            *f;
-    double                          duration;
-    ngx_int_t                       discont;
-    uint64_t                        mag, key_id, base;
-    static u_char                   buffer[4096];
 
-    ctx = ngx_rtmp_get_module_ctx(s, ngx_rtmp_hls_module);
-
-    ngx_memzero(&file, sizeof(file));
-
-    file.log = s->connection->log;
-
-    ngx_str_set(&file.name, "m3u8");
-
-    file.fd = ngx_open_file(ctx->playlist.data, NGX_FILE_RDONLY, NGX_FILE_OPEN,
-                            0);
-    if (file.fd == NGX_INVALID_FILE) {
-        return;
-    }
-
-    offset = 0;
-    ctx->nfrags = 0;
-    f = NULL;
-    duration = 0;
-    discont = 0;
-    key_id = 0;
-
-    for ( ;; ) {
-
-        ret = ngx_read_file(&file, buffer, sizeof(buffer), offset);
-        if (ret <= 0) {
-            goto done;
-        }
-
-        p = buffer;
-        end = buffer + ret;
-
-        for ( ;; ) {
-            last = ngx_strlchr(p, end, '\n');
-
-            if (last == NULL) {
-                if (p == buffer) {
-                    goto done;
-                }
-                break;
-            }
-
-            next = last + 1;
-            offset += (next - p);
-
-            if (p != last && last[-1] == '\r') {
-                last--;
-            }
-
-
-#define NGX_RTMP_MSEQ           "#EXT-X-MEDIA-SEQUENCE:"
-#define NGX_RTMP_MSEQ_LEN       (sizeof(NGX_RTMP_MSEQ) - 1)
-
-
-            if (ngx_memcmp(p, NGX_RTMP_MSEQ, NGX_RTMP_MSEQ_LEN) == 0) {
-
-                ctx->frag = (uint64_t) strtod((const char *)
-                                              &p[NGX_RTMP_MSEQ_LEN], NULL);
-
-                ngx_log_debug1(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                               "hls: restore sequence frag=%uL", ctx->frag);
-            }
-
-
-#define NGX_RTMP_XKEY           "#EXT-X-KEY:"
-#define NGX_RTMP_XKEY_LEN       (sizeof(NGX_RTMP_XKEY) - 1)
-
-            if (ngx_memcmp(p, NGX_RTMP_XKEY, NGX_RTMP_XKEY_LEN) == 0) {
-
-                /* recover key id from initialization vector */
-
-                key_id = 0;
-                base = 1;
-                pp = last - 1;
-
-                for ( ;; ) {
-                    if (pp < p) {
-                        ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
-                                "hls: failed to read key id");
-                        break;
-                    }
-
-                    c = *pp;
-                    if (c == 'x') {
-                        break;
-                    }
-
-                    if (c >= '0' && c <= '9') {
-                        c -= '0';
-                        goto next;
-                    }
-
-                    c |= 0x20;
-
-                    if (c >= 'a' && c <= 'f') {
-                        c -= 'a' - 10;
-                        goto next;
-                    }
-
-                    ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
-                                  "hls: bad character in key id");
-                    break;
-
-                next:
-
-                    key_id += base * c;
-                    base *= 0x10;
-                    pp--;
-                }
-            }
-
-
-#define NGX_RTMP_EXTINF         "#EXTINF:"
-#define NGX_RTMP_EXTINF_LEN     (sizeof(NGX_RTMP_EXTINF) - 1)
-
-
-            if (ngx_memcmp(p, NGX_RTMP_EXTINF, NGX_RTMP_EXTINF_LEN) == 0) {
-
-                duration = strtod((const char *) &p[NGX_RTMP_EXTINF_LEN], NULL);
-
-                ngx_log_debug1(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                               "hls: restore durarion=%.3f", duration);
-            }
-
-
-#define NGX_RTMP_DISCONT        "#EXT-X-DISCONTINUITY"
-#define NGX_RTMP_DISCONT_LEN    (sizeof(NGX_RTMP_DISCONT) - 1)
-
-
-            if (ngx_memcmp(p, NGX_RTMP_DISCONT, NGX_RTMP_DISCONT_LEN) == 0) {
-
-                discont = 1;
-
-                ngx_log_debug0(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                               "hls: discontinuity");
-            }
-
-            /* find '.ts\r' */
-
-            if (p + 4 <= last &&
-                last[-3] == '.' && last[-2] == 't' && last[-1] == 's')
-            {
-                f = ngx_rtmp_hls_get_frag(s, ctx->nfrags);
-
-                ngx_memzero(f, sizeof(*f));
-
-                f->duration = duration;
-                f->discont = discont;
-                f->active = 1;
-                f->id = 0;
-
-                discont = 0;
-
-                mag = 1;
-                for (pa = last - 4; pa >= p; pa--) {
-                    if (*pa < '0' || *pa > '9') {
-                        break;
-                    }
-                    f->id += (*pa - '0') * mag;
-                    mag *= 10;
-                }
-
-                f->key_id = key_id;
-
-                ngx_rtmp_hls_next_frag(s);
-
-                ngx_log_debug6(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                               "hls: restore fragment '%*s' id=%uL, "
-                               "duration=%.3f, frag=%uL, nfrags=%ui",
-                               (size_t) (last - p), p, f->id, f->duration,
-                               ctx->frag, ctx->nfrags);
-            }
-
-            p = next;
-        }
-    }
-
-done:
-    ngx_close_file(file.fd);
-}
 
 
 

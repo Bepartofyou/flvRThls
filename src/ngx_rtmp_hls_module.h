@@ -25,6 +25,12 @@ typedef struct {
 	u_char     *data;
 } ngx_str_t;
 
+#define ngx_string(str)     { sizeof(str) - 1, (u_char *) str }
+#define ngx_null_string     { 0, NULL }
+#define ngx_str_set(str, text)                                               \
+    (str)->len = sizeof(text) - 1; (str)->data = (u_char *) text
+#define ngx_str_null(str)   (str)->len = 0; (str)->data = NULL
+
 typedef struct {
 	void        *elts;
 	ngx_uint_t   nelts;
@@ -213,6 +219,18 @@ typedef uint64_t                    ngx_atomic_uint_t;
 
 #define NGX_MAX_PATH             4096
 
+typedef struct ngx_file_s            ngx_file_t;
+struct ngx_file_s {
+	FILE*                   fd;
+	ngx_str_t                  name;
+	ngx_file_info_t            info;
+
+	off_t                      offset;
+	off_t                      sys_offset;
+	unsigned                   valid_info : 1;
+	unsigned                   directio : 1;
+};
+
 
 typedef struct {
 	unsigned    len : 28;
@@ -265,7 +283,8 @@ ngx_rtmp_hls_ensure_directory(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *
 static ngx_int_t
 ngx_rtmp_hls_open_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts,
 ngx_int_t discont);
-
+static void
+ngx_rtmp_hls_restore_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
 
 
 static u_char *
