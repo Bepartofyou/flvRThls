@@ -49,6 +49,14 @@ typedef int             ngx_fd_t;
 #define ngx_memcpy(dst, src, n)   (void) memcpy(dst, src, n)
 #define ngx_cpymem(dst, src, n)   (((u_char *) memcpy(dst, src, n)) + (n))
 
+#define ngx_strcmp(s1, s2)  strcmp((const char *) s1, (const char *) s2)
+
+
+#define ngx_strstr(s1, s2)  strstr((const char *) s1, (const char *) s2)
+#define ngx_strlen(s)       strlen((const char *) s)
+
+#define ngx_strchr(s1, c)   strchr((const char *) s1, (int) c)
+
 typedef void *              ngx_buf_tag_t;
 typedef struct ngx_buf_s    ngx_buf_t;
 typedef struct ngx_chain_s  ngx_chain_t;

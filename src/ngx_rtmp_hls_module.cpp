@@ -875,6 +875,195 @@ done:
 	fclose(file.fd);
 }
 
+static ngx_int_t
+ngx_rtmp_hls_publish(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_publish_t *v)
+{
+	u_char                         *p, *pp;
+	ngx_rtmp_hls_frag_t            *f;
+	ngx_buf_t                      *b;
+	size_t                          len;
+	ngx_rtmp_hls_variant_t         *var;
+	ngx_uint_t                      n;
+
+	if (hacf == NULL || !hacf->hls || hacf->path.len == 0) {
+		goto next;
+	}
+
+	printf("hls: publish: name='%s' type='%s'  \n",
+		v->name, v->type);
+
+	if (ctx == NULL) {
+
+		ctx = (ngx_rtmp_hls_ctx_t*)malloc(sizeof(ngx_rtmp_hls_ctx_t));
+
+	} else {
+
+		f = ctx->frags;
+		b = ctx->aframe;
+
+		ngx_memzero(ctx, sizeof(ngx_rtmp_hls_ctx_t));
+
+		ctx->frags = f;
+		ctx->aframe = b;
+
+		if (b) {
+			b->pos = b->last = b->start;
+		}
+	}
+
+	if (ctx->frags == NULL) {
+		ctx->frags = (ngx_rtmp_hls_frag_t*)malloc(sizeof(ngx_rtmp_hls_frag_t) *(hacf->winfrags * 2 + 1));
+		if (ctx->frags == NULL) {
+			return NGX_ERROR;
+		}
+	}
+
+	if (ngx_strstr(v->name, "..")) {
+		printf("hls: bad stream name: '%s'  \n", v->name);
+		return NGX_ERROR;
+	}
+
+	ctx->name.len = ngx_strlen(v->name);
+	ctx->name.data = (u_char*)malloc(ctx->name.len + 1);
+
+	if (ctx->name.data == NULL) {
+		return NGX_ERROR;
+	}
+
+	*ngx_cpymem(ctx->name.data, v->name, ctx->name.len) = 0;
+
+	len = hacf->path.len + 1 + ctx->name.len + sizeof(".m3u8");
+	if (hacf->nested) {
+		len += sizeof("/index") - 1;
+	}
+
+	ctx->playlist.data = (u_char*)malloc(len);
+	p = ngx_cpymem(ctx->playlist.data, hacf->path.data, hacf->path.len);
+
+	if (p[-1] != '/') {
+		*p++ = '/';
+	}
+
+	p = ngx_cpymem(p, ctx->name.data, ctx->name.len);
+
+	/*
+	* ctx->stream holds initial part of stream file path
+	* however the space for the whole stream path
+	* is allocated
+	*/
+
+	ctx->stream.len = p - ctx->playlist.data + 1;
+	ctx->stream.data = (u_char*)malloc(
+		ctx->stream.len + NGX_INT64_LEN +
+		sizeof(".ts"));
+
+	ngx_memcpy(ctx->stream.data, ctx->playlist.data, ctx->stream.len - 1);
+	ctx->stream.data[ctx->stream.len - 1] = (hacf->nested ? '/' : '-');
+
+	/* varint playlist path */
+
+	if (hacf->variant) {
+		var = (ngx_rtmp_hls_variant_t*)hacf->variant->elts;
+		for (n = 0; n < hacf->variant->nelts; n++, var++) {
+			if (ctx->name.len > var->suffix.len &&
+				ngx_memcmp(var->suffix.data,
+				ctx->name.data + ctx->name.len - var->suffix.len,
+				var->suffix.len)
+				== 0)
+			{
+				ctx->var = var;
+
+				len = (size_t) (p - ctx->playlist.data);
+
+				ctx->var_playlist.len = len - var->suffix.len + sizeof(".m3u8")
+					- 1;
+				ctx->var_playlist.data = (u_char*)malloc(
+					ctx->var_playlist.len + 1);
+
+				pp = ngx_cpymem(ctx->var_playlist.data, ctx->playlist.data,
+					len - var->suffix.len);
+				pp = ngx_cpymem(pp, ".m3u8", sizeof(".m3u8") - 1);
+				*pp = 0;
+
+				ctx->var_playlist_bak.len = ctx->var_playlist.len +
+					sizeof(".bak") - 1;
+				ctx->var_playlist_bak.data = (u_char*)malloc(
+					ctx->var_playlist_bak.len + 1);
+
+				pp = ngx_cpymem(ctx->var_playlist_bak.data,
+					ctx->var_playlist.data,
+					ctx->var_playlist.len);
+				pp = ngx_cpymem(pp, ".bak", sizeof(".bak") - 1);
+				*pp = 0;
+
+				break;
+			}
+		}
+	}
+
+
+	/* playlist path */
+
+	if (hacf->nested) {
+		p = ngx_cpymem(p, "/index.m3u8", sizeof("/index.m3u8") - 1);
+	} else {
+		p = ngx_cpymem(p, ".m3u8", sizeof(".m3u8") - 1);
+	}
+
+	ctx->playlist.len = p - ctx->playlist.data;
+
+	*p = 0;
+
+	/* playlist bak (new playlist) path */
+
+	ctx->playlist_bak.data = (u_char*)malloc(
+		ctx->playlist.len + sizeof(".bak"));
+	p = ngx_cpymem(ctx->playlist_bak.data, ctx->playlist.data,
+		ctx->playlist.len);
+	p = ngx_cpymem(p, ".bak", sizeof(".bak") - 1);
+
+	ctx->playlist_bak.len = p - ctx->playlist_bak.data;
+
+	*p = 0;
+
+	/* key path */
+
+	if (hacf->keys) {
+		len = hacf->key_path.len + 1 + ctx->name.len + 1 + NGX_INT64_LEN
+			+ sizeof(".key");
+
+		ctx->keyfile.data = (u_char*)malloc(len);
+		if (ctx->keyfile.data == NULL) {
+			return NGX_ERROR;
+		}
+
+		p = ngx_cpymem(ctx->keyfile.data, hacf->key_path.data,
+			hacf->key_path.len);
+
+		if (p[-1] != '/') {
+			*p++ = '/';
+		}
+
+		p = ngx_cpymem(p, ctx->name.data, ctx->name.len);
+		*p++ = (hacf->nested ? '/' : '-');
+
+		ctx->keyfile.len = p - ctx->keyfile.data;
+	}
+
+	printf("hls: playlist='%V' playlist_bak='%V' "
+		"stream_pattern='%V' keyfile_pattern='%V'  \n",
+		&ctx->playlist, &ctx->playlist_bak,
+		&ctx->stream, &ctx->keyfile);
+
+	if (hacf->continuous) {
+		ngx_rtmp_hls_restore_stream(ctx,hacf);
+	}
+
+next:
+	//return next_publish(s, v);
+	return NGX_ERROR;
+}
+
 #if 0
 CHlsModule::CHlsModule()
 {
@@ -900,208 +1089,6 @@ CHlsModule::~CHlsModule()
 
 
 
-static ngx_int_t
-ngx_rtmp_hls_publish(ngx_rtmp_session_t *s, ngx_rtmp_publish_t *v)
-{
-    ngx_rtmp_hls_app_conf_t        *hacf;
-    ngx_rtmp_hls_ctx_t             *ctx;
-    u_char                         *p, *pp;
-    ngx_rtmp_hls_frag_t            *f;
-    ngx_buf_t                      *b;
-    size_t                          len;
-    ngx_rtmp_hls_variant_t         *var;
-    ngx_uint_t                      n;
-
-    hacf = ngx_rtmp_get_module_app_conf(s, ngx_rtmp_hls_module);
-    if (hacf == NULL || !hacf->hls || hacf->path.len == 0) {
-        goto next;
-    }
-
-    if (s->auto_pushed) {
-        goto next;
-    }
-
-    ngx_log_debug2(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                   "hls: publish: name='%s' type='%s'",
-                   v->name, v->type);
-
-    ctx = ngx_rtmp_get_module_ctx(s, ngx_rtmp_hls_module);
-
-    if (ctx == NULL) {
-
-        ctx = ngx_pcalloc(s->connection->pool, sizeof(ngx_rtmp_hls_ctx_t));
-        ngx_rtmp_set_ctx(s, ctx, ngx_rtmp_hls_module);
-
-    } else {
-
-        f = ctx->frags;
-        b = ctx->aframe;
-
-        ngx_memzero(ctx, sizeof(ngx_rtmp_hls_ctx_t));
-
-        ctx->frags = f;
-        ctx->aframe = b;
-
-        if (b) {
-            b->pos = b->last = b->start;
-        }
-    }
-
-    if (ctx->frags == NULL) {
-        ctx->frags = ngx_pcalloc(s->connection->pool,
-                                 sizeof(ngx_rtmp_hls_frag_t) *
-                                 (hacf->winfrags * 2 + 1));
-        if (ctx->frags == NULL) {
-            return NGX_ERROR;
-        }
-    }
-
-    if (ngx_strstr(v->name, "..")) {
-        ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
-                      "hls: bad stream name: '%s'", v->name);
-        return NGX_ERROR;
-    }
-
-    ctx->name.len = ngx_strlen(v->name);
-    ctx->name.data = ngx_palloc(s->connection->pool, ctx->name.len + 1);
-
-    if (ctx->name.data == NULL) {
-        return NGX_ERROR;
-    }
-
-    *ngx_cpymem(ctx->name.data, v->name, ctx->name.len) = 0;
-
-    len = hacf->path.len + 1 + ctx->name.len + sizeof(".m3u8");
-    if (hacf->nested) {
-        len += sizeof("/index") - 1;
-    }
-
-    ctx->playlist.data = ngx_palloc(s->connection->pool, len);
-    p = ngx_cpymem(ctx->playlist.data, hacf->path.data, hacf->path.len);
-
-    if (p[-1] != '/') {
-        *p++ = '/';
-    }
-
-    p = ngx_cpymem(p, ctx->name.data, ctx->name.len);
-
-    /*
-     * ctx->stream holds initial part of stream file path
-     * however the space for the whole stream path
-     * is allocated
-     */
-
-    ctx->stream.len = p - ctx->playlist.data + 1;
-    ctx->stream.data = ngx_palloc(s->connection->pool,
-                                  ctx->stream.len + NGX_INT64_LEN +
-                                  sizeof(".ts"));
-
-    ngx_memcpy(ctx->stream.data, ctx->playlist.data, ctx->stream.len - 1);
-    ctx->stream.data[ctx->stream.len - 1] = (hacf->nested ? '/' : '-');
-
-    /* varint playlist path */
-
-    if (hacf->variant) {
-        var = hacf->variant->elts;
-        for (n = 0; n < hacf->variant->nelts; n++, var++) {
-            if (ctx->name.len > var->suffix.len &&
-                ngx_memcmp(var->suffix.data,
-                           ctx->name.data + ctx->name.len - var->suffix.len,
-                           var->suffix.len)
-                == 0)
-            {
-                ctx->var = var;
-
-                len = (size_t) (p - ctx->playlist.data);
-
-                ctx->var_playlist.len = len - var->suffix.len + sizeof(".m3u8")
-                                        - 1;
-                ctx->var_playlist.data = ngx_palloc(s->connection->pool,
-                                                    ctx->var_playlist.len + 1);
-
-                pp = ngx_cpymem(ctx->var_playlist.data, ctx->playlist.data,
-                               len - var->suffix.len);
-                pp = ngx_cpymem(pp, ".m3u8", sizeof(".m3u8") - 1);
-                *pp = 0;
-
-                ctx->var_playlist_bak.len = ctx->var_playlist.len +
-                                            sizeof(".bak") - 1;
-                ctx->var_playlist_bak.data = ngx_palloc(s->connection->pool,
-                                                 ctx->var_playlist_bak.len + 1);
-
-                pp = ngx_cpymem(ctx->var_playlist_bak.data,
-                                ctx->var_playlist.data,
-                                ctx->var_playlist.len);
-                pp = ngx_cpymem(pp, ".bak", sizeof(".bak") - 1);
-                *pp = 0;
-
-                break;
-            }
-        }
-    }
-
-
-    /* playlist path */
-
-    if (hacf->nested) {
-        p = ngx_cpymem(p, "/index.m3u8", sizeof("/index.m3u8") - 1);
-    } else {
-        p = ngx_cpymem(p, ".m3u8", sizeof(".m3u8") - 1);
-    }
-
-    ctx->playlist.len = p - ctx->playlist.data;
-
-    *p = 0;
-
-    /* playlist bak (new playlist) path */
-
-    ctx->playlist_bak.data = ngx_palloc(s->connection->pool,
-                                        ctx->playlist.len + sizeof(".bak"));
-    p = ngx_cpymem(ctx->playlist_bak.data, ctx->playlist.data,
-                   ctx->playlist.len);
-    p = ngx_cpymem(p, ".bak", sizeof(".bak") - 1);
-
-    ctx->playlist_bak.len = p - ctx->playlist_bak.data;
-
-    *p = 0;
-
-    /* key path */
-
-    if (hacf->keys) {
-        len = hacf->key_path.len + 1 + ctx->name.len + 1 + NGX_INT64_LEN
-              + sizeof(".key");
-
-        ctx->keyfile.data = ngx_palloc(s->connection->pool, len);
-        if (ctx->keyfile.data == NULL) {
-            return NGX_ERROR;
-        }
-
-        p = ngx_cpymem(ctx->keyfile.data, hacf->key_path.data,
-                       hacf->key_path.len);
-
-        if (p[-1] != '/') {
-            *p++ = '/';
-        }
-
-        p = ngx_cpymem(p, ctx->name.data, ctx->name.len);
-        *p++ = (hacf->nested ? '/' : '-');
-
-        ctx->keyfile.len = p - ctx->keyfile.data;
-    }
-
-    ngx_log_debug4(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                   "hls: playlist='%V' playlist_bak='%V' "
-                   "stream_pattern='%V' keyfile_pattern='%V'",
-                   &ctx->playlist, &ctx->playlist_bak,
-                   &ctx->stream, &ctx->keyfile);
-
-    if (hacf->continuous) {
-        ngx_rtmp_hls_restore_stream(s);
-    }
-
-next:
-    return next_publish(s, v);
-}
 
 
 static ngx_int_t

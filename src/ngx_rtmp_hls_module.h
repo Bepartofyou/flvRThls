@@ -161,6 +161,15 @@ typedef struct {
 	ngx_uint_t                  meta_version;
 } ngx_rtmp_codec_ctx_t;
 
+#define NGX_RTMP_MAX_NAME           256
+#define NGX_RTMP_MAX_URL            256
+#define NGX_RTMP_MAX_ARGS           NGX_RTMP_MAX_NAME
+typedef struct {
+	u_char                          name[NGX_RTMP_MAX_NAME];
+	u_char                          args[NGX_RTMP_MAX_ARGS];
+	u_char                          type[16];
+	int                             silent;
+} ngx_rtmp_publish_t;
 
 #define NGX_RTMP_HLS_NAMING_SEQUENTIAL  1
 #define NGX_RTMP_HLS_NAMING_TIMESTAMP   2
@@ -285,6 +294,8 @@ ngx_rtmp_hls_open_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hac
 ngx_int_t discont);
 static void
 ngx_rtmp_hls_restore_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
+static ngx_int_t
+ngx_rtmp_hls_publish(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_publish_t *v);
 
 
 static u_char *
