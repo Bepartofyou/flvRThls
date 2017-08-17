@@ -31,6 +31,16 @@ set(flvmeta_src
   update.h
   util.cpp
   util.h
+  hls_module.cpp
+  hls_module.h
+  mpegts.cpp
+  mpegts.h
+  ngx_rtmp_hls_module.cpp
+  ngx_rtmp_hls_module.h
+  ngx_rtmp_mpegts.cpp
+  ngx_rtmp_mpegts.h
+  ngx_linux_config.h
+  ngx_win32_config.h
   ${CMAKE_BINARY_DIR}/config.h
 )
 
