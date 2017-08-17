@@ -315,70 +315,47 @@ private:
 	ngx_rtmp_hls_ctx_t       ctx;
 	ngx_rtmp_codec_ctx_t     codec_ctx;
 	ngx_rtmp_hls_app_conf_t  hacf;
+
+private:
+	u_char *ngx_strlchr(u_char *p, u_char *last, u_char c);
+	u_char *ngx_sprintf(u_char *buf, const char *fmt, ...);
+	u_char *ngx_snprintf(u_char *buf, size_t max, const char *fmt, ...);
+	u_char *ngx_slprintf(u_char *buf, u_char *last, const char *fmt, ...);
+	u_char *ngx_vslprintf(u_char *buf, u_char *last, const char *fmt, va_list args);
+	u_char *ngx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64, u_char zero, ngx_uint_t hexadecimal, ngx_uint_t width);
+
+	void * ngx_rtmp_rmemcpy(void *dst, const void* src, size_t n);
+	ngx_int_t ngx_rtmp_is_codec_header(ngx_chain_t *in);
+
+private:
+	ngx_rtmp_hls_frag_t * ngx_rtmp_hls_get_frag(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_int_t n);
+	void ngx_rtmp_hls_next_frag(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
+	ngx_int_t ngx_rtmp_hls_rename_file(u_char *src, u_char *dst);
+	ngx_int_t ngx_rtmp_hls_write_variant_playlist(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
+	ngx_int_t ngx_rtmp_hls_write_playlist(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
+	ngx_int_t ngx_rtmp_hls_copy(void *dst, u_char **src, size_t n, ngx_chain_t **in);
+	ngx_int_t ngx_rtmp_hls_append_aud(ngx_buf_t *out);
+	ngx_int_t ngx_rtmp_hls_append_sps_pps(ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_hls_ctx_t *ctx, ngx_buf_t *out);
+	uint64_t ngx_rtmp_hls_get_fragment_id(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts);
+	ngx_int_t ngx_rtmp_hls_close_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
+	ngx_int_t ngx_rtmp_hls_ensure_directory(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_str_t *path);
+	ngx_int_t ngx_rtmp_hls_open_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts, ngx_int_t discont);
+	void ngx_rtmp_hls_restore_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
+	ngx_int_t ngx_rtmp_hls_publish(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_publish_t *v);
+	ngx_int_t ngx_rtmp_hls_close_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_close_stream_t *v);
+	ngx_int_t ngx_rtmp_hls_parse_aac_header(ngx_rtmp_codec_ctx_t *codec_ctx, ngx_uint_t *objtype, ngx_uint_t *srindex, ngx_uint_t *chconf);
+	void ngx_rtmp_hls_update_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts, ngx_int_t boundary, ngx_uint_t flush_rate);
+	
+	ngx_int_t ngx_rtmp_hls_stream_begin();
+	ngx_int_t ngx_rtmp_hls_stream_eof(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
+	ngx_int_t ngx_rtmp_hls_cleanup_dir(ngx_str_t *ppath, ngx_msec_t playlen);
+	time_t ngx_rtmp_hls_cleanup(void *data);
+public:
+	ngx_int_t ngx_rtmp_hls_flush_audio(ngx_rtmp_hls_ctx_t *ctx);
+	ngx_int_t ngx_rtmp_hls_audio(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_header_t *h,
+		ngx_chain_t *in);
+    ngx_int_t ngx_rtmp_hls_video(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_header_t *h,
+		ngx_chain_t *in);
 };
-
-
-
-static ngx_rtmp_hls_frag_t *
-ngx_rtmp_hls_get_frag(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_int_t n);
-static void
-ngx_rtmp_hls_next_frag(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
-static ngx_int_t
-ngx_rtmp_hls_rename_file(u_char *src, u_char *dst);
-static ngx_int_t
-ngx_rtmp_hls_write_variant_playlist(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
-static ngx_int_t
-ngx_rtmp_hls_write_playlist(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
-static ngx_int_t
-ngx_rtmp_hls_copy(void *dst, u_char **src, size_t n, ngx_chain_t **in);
-static ngx_int_t
-ngx_rtmp_hls_append_aud(ngx_buf_t *out);
-static uint64_t
-ngx_rtmp_hls_get_fragment_id(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts);
-static ngx_int_t
-ngx_rtmp_hls_close_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
-static ngx_int_t
-ngx_rtmp_hls_ensure_directory(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_str_t *path);
-static ngx_int_t
-ngx_rtmp_hls_open_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts,
-ngx_int_t discont);
-static void
-ngx_rtmp_hls_restore_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
-static ngx_int_t
-ngx_rtmp_hls_publish(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_publish_t *v);
-static ngx_int_t
-ngx_rtmp_hls_close_stream(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_close_stream_t *v);
-static ngx_int_t
-ngx_rtmp_hls_parse_aac_header(ngx_rtmp_codec_ctx_t *codec_ctx, ngx_uint_t *objtype,
-ngx_uint_t *srindex, ngx_uint_t *chconf);
-static void
-ngx_rtmp_hls_update_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts,
-ngx_int_t boundary, ngx_uint_t flush_rate);
-static ngx_int_t
-ngx_rtmp_hls_flush_audio(ngx_rtmp_hls_ctx_t *ctx);
-static ngx_int_t
-ngx_rtmp_hls_audio(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_header_t *h,
-ngx_chain_t *in);
-static ngx_int_t
-ngx_rtmp_hls_video(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_header_t *h,
-ngx_chain_t *in);
-static ngx_int_t
-ngx_rtmp_hls_stream_begin();
-static ngx_int_t
-ngx_rtmp_hls_stream_eof(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
-static ngx_int_t
-ngx_rtmp_hls_cleanup_dir(ngx_str_t *ppath, ngx_msec_t playlen);
-static time_t
-ngx_rtmp_hls_cleanup(void *data);
-
-
-static u_char *
-ngx_snprintf(u_char *buf, size_t max, const char *fmt, ...);
-static u_char *
-ngx_slprintf(u_char *buf, u_char *last, const char *fmt, ...);
-static u_char *
-ngx_vslprintf(u_char *buf, u_char *last, const char *fmt, va_list args);
-static u_char *
-ngx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64, u_char zero, ngx_uint_t hexadecimal, ngx_uint_t width);
 
 #endif /* _HLS_MODULE_H_INCLUDED_ */
