@@ -169,17 +169,25 @@ typedef struct {
 #define NGX_RTMP_HLS_TYPE_EVENT         2
 
 #if (WIN32)
-//#include "ngx_win32_config.h"
 typedef DWORD               ngx_pid_t;
 #define ngx_rename_file(o, n)    MoveFile((const char *) o, (const char *) n)
+#define ngx_create_dir(name, access) CreateDirectory((const char *) name, NULL)
+typedef BY_HANDLE_FILE_INFORMATION  ngx_file_info_t;
+ngx_int_t ngx_file_info(u_char *filename, ngx_file_info_t *fi);
+#define ngx_errno                  GetLastError()
+
 #define NGX_INT_T_LEN   NGX_INT32_LEN
 #define NGX_MAX_INT_T_VALUE  2147483647
 #define NGX_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
 typedef int32_t                     ngx_atomic_int_t;
 typedef uint32_t                    ngx_atomic_uint_t;
 #else
-//#include "ngx_linux_config.h"
 #define ngx_rename_file(o, n)    rename((const char *) o, (const char *) n)
+#define ngx_create_dir(name, access) mkdir((const char *) name, access)
+typedef struct stat              ngx_file_info_t;
+#define ngx_file_info(file, sb)  stat((const char *) file, sb)
+#define ngx_errno                  errno
+
 typedef pid_t       ngx_pid_t;
 #define NGX_INT_T_LEN   NGX_INT64_LEN
 #define NGX_MAX_INT_T_VALUE  9223372036854775807
@@ -202,6 +210,9 @@ typedef uint64_t                    ngx_atomic_uint_t;
 #define CRLF   "\r\n"
 #define NGX_INVALID_FILE         -1
 #define NGX_FILE_ERROR           -1
+
+#define NGX_MAX_PATH             4096
+
 
 typedef struct {
 	unsigned    len : 28;
@@ -245,6 +256,17 @@ static ngx_int_t
 ngx_rtmp_hls_copy(void *dst, u_char **src, size_t n, ngx_chain_t **in);
 static ngx_int_t
 ngx_rtmp_hls_append_aud(ngx_buf_t *out);
+static uint64_t
+ngx_rtmp_hls_get_fragment_id(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts);
+static ngx_int_t
+ngx_rtmp_hls_close_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf);
+static ngx_int_t
+ngx_rtmp_hls_ensure_directory(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_str_t *path);
+static ngx_int_t
+ngx_rtmp_hls_open_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts,
+ngx_int_t discont);
+
+
 
 static u_char *
 ngx_snprintf(u_char *buf, size_t max, const char *fmt, ...);

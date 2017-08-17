@@ -22,6 +22,21 @@ ngx_rtmp_rmemcpy(void *dst, const void* src, size_t n)
 	return dst;
 }
 
+u_char *
+ngx_sprintf(u_char *buf, const char *fmt, ...)
+{
+	u_char   *p;
+	va_list   args;
+
+	va_start(args, fmt);
+	p = ngx_vslprintf(buf, (u_char*)(void *)-1, fmt, args);
+	va_end(args);
+
+	return p;
+}
+
+////////////////////////////////
+
 static ngx_rtmp_hls_frag_t *
 ngx_rtmp_hls_get_frag(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_int_t n)
 {
@@ -415,6 +430,250 @@ ngx_rtmp_hls_append_sps_pps(ngx_rtmp_codec_ctx_t *codec_ctx, ngx_rtmp_hls_ctx_t 
 	return NGX_OK;
 }
 
+static uint64_t
+ngx_rtmp_hls_get_fragment_id(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts)
+{
+	switch (hacf->naming) {
+
+	case NGX_RTMP_HLS_NAMING_TIMESTAMP:
+		return ts;
+
+	//case NGX_RTMP_HLS_NAMING_SYSTEM:
+	//	return (uint64_t) ngx_cached_time->sec * 1000 + ngx_cached_time->msec;
+
+	default: /* NGX_RTMP_HLS_NAMING_SEQUENTIAL */
+		return ctx->frag + ctx->nfrags;
+	}
+}
+
+static ngx_int_t
+ngx_rtmp_hls_close_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf)
+{
+	if (ctx == NULL || !ctx->opened) {
+		return NGX_OK;
+	}
+
+	printf("hls: close fragment n=%uL  \n", ctx->frag);
+
+	ngx_rtmp_mpegts_close_file(&ctx->file);
+
+	ctx->opened = 0;
+
+	ngx_rtmp_hls_next_frag(ctx, hacf);
+
+	ngx_rtmp_hls_write_playlist(ctx, hacf);
+
+	return NGX_OK;
+}
+
+static ngx_int_t
+ngx_rtmp_hls_ensure_directory(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, ngx_str_t *path)
+{
+	size_t                    len;
+	ngx_file_info_t           fi;
+
+	static u_char  zpath[NGX_MAX_PATH + 1];
+
+	if (path->len + 1 > sizeof(zpath)) {
+		printf("hls: too long path  \n");
+		return NGX_ERROR;
+	}
+
+	ngx_snprintf(zpath, sizeof(zpath), "%V%Z", path);
+
+	//if (ngx_file_info(zpath, &fi) == NGX_FILE_ERROR) {
+
+	//	if (ngx_errno != NGX_ENOENT) {
+	//		printf("hls: stat() failed on '%V'  \n", path);
+	//		return NGX_ERROR;
+	//	}
+
+	//	/* ENOENT */
+
+	//	if (ngx_create_dir(zpath, NGX_RTMP_HLS_DIR_ACCESS) == NGX_FILE_ERROR) {
+	//		printf("hls: mkdir() failed on '%V'  \n", path);
+	//		return NGX_ERROR;
+	//	}
+
+	//	printf("hls: directory '%V' created  \n", path);
+
+	//}
+	//else {
+
+	//	if (!ngx_is_dir(&fi)) {
+	//		ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+	//			"hls: '%V' exists and is not a directory", path);
+	//		return  NGX_ERROR;
+	//	}
+
+	//	ngx_log_debug1(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
+	//		"hls: directory '%V' exists", path);
+	//}
+
+	if (!hacf->nested) {
+		return NGX_OK;
+	}
+
+	len = path->len;
+	if (path->data[len - 1] == '/') {
+		len--;
+	}
+
+	if (len + 1 + ctx->name.len + 1 > sizeof(zpath)) {
+		printf("hls: too long path  \n");
+		return NGX_ERROR;
+	}
+
+	ngx_snprintf(zpath, sizeof(zpath) - 1, "%*s/%V%Z", len, path->data,
+		&ctx->name);
+
+	//if (ngx_file_info(zpath, &fi) != NGX_FILE_ERROR) {
+
+	//	if (ngx_is_dir(&fi)) {
+	//		ngx_log_debug1(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
+	//			"hls: directory '%s' exists", zpath);
+	//		return NGX_OK;
+	//	}
+
+	//	ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+	//		"hls: '%s' exists and is not a directory", zpath);
+
+	//	return  NGX_ERROR;
+	//}
+
+	//if (ngx_errno != NGX_ENOENT) {
+	//	ngx_log_error(NGX_LOG_ERR, s->connection->log, ngx_errno,
+	//		"hls: " ngx_file_info_n " failed on '%s'", zpath);
+	//	return NGX_ERROR;
+	//}
+
+	/* NGX_ENOENT */
+
+	if (ngx_create_dir(zpath, NGX_RTMP_HLS_DIR_ACCESS) == NGX_FILE_ERROR) {
+		printf("hls: mkdir() failed on '%s'  \n", zpath);
+		return NGX_ERROR;
+	}
+
+	printf("hls: directory '%s' created  \n", zpath);
+
+	return NGX_OK;
+}
+
+static ngx_int_t
+ngx_rtmp_hls_open_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rtmp_hls_app_conf_t *hacf, uint64_t ts,
+ngx_int_t discont)
+{
+	uint64_t                  id;
+	FILE*                  fd;
+	ngx_uint_t                g;
+	ngx_rtmp_hls_frag_t      *f;
+
+	if (ctx->opened) {
+		return NGX_OK;
+	}
+
+	if (ngx_rtmp_hls_ensure_directory(ctx,hacf, &hacf->path) != NGX_OK) {
+		return NGX_ERROR;
+	}
+
+	if (hacf->keys &&
+		ngx_rtmp_hls_ensure_directory(ctx, hacf, &hacf->key_path) != NGX_OK)
+	{
+		return NGX_ERROR;
+	}
+
+	id = ngx_rtmp_hls_get_fragment_id(ctx, hacf, ts);
+
+	if (hacf->granularity) {
+		g = (ngx_uint_t) hacf->granularity;
+		id = (uint64_t) (id / g) * g;
+	}
+
+	ngx_sprintf(ctx->stream.data + ctx->stream.len, "%uL.ts%Z", id);
+
+	if (hacf->keys) {
+		if (ctx->key_frags == 0) {
+
+			ctx->key_frags = hacf->frags_per_key - 1;
+			ctx->key_id = id;
+
+			//if (RAND_bytes(ctx->key, 16) < 0) {
+			//	printf("hls: failed to create key  \n");
+			//	return NGX_ERROR;
+			//}
+
+			ngx_sprintf(ctx->keyfile.data + ctx->keyfile.len, "%uL.key%Z", id);
+
+			fd = fopen((const char*)ctx->keyfile.data, "wb");
+
+			if (fd == NULL) {
+				printf("hls: failed to open key file '%s'  \n",
+					ctx->keyfile.data);
+				return NGX_ERROR;
+			}
+			
+			if (fwrite(ctx->key, 16, 1, fd) != 16) {
+				printf("hls: failed to write key file '%s'  \n",
+					ctx->keyfile.data);
+				fclose(fd);
+				return NGX_ERROR;
+			}
+
+			fclose(fd);
+
+		} else {
+			if (hacf->frags_per_key) {
+				ctx->key_frags--;
+			}
+
+			//if (ngx_set_file_time(ctx->keyfile.data, 0, ngx_cached_time->sec)
+			//	!= NGX_OK)
+			//{
+			//	printf("utimes() '%s' failed  \n",
+			//		ctx->keyfile.data);
+			//}
+		}
+	}
+
+	printf("hls: open fragment file='%s', keyfile='%s', "
+		"frag=%uL, n=%ui, time=%uL, discont=%i  \n",
+		ctx->stream.data,
+		ctx->keyfile.data ? ctx->keyfile.data : (u_char *) "",
+		ctx->frag, ctx->nfrags, ts, discont);
+
+	if (hacf->keys &&
+		ngx_rtmp_mpegts_init_encryption(&ctx->file, ctx->key, 16, ctx->key_id)
+		!= NGX_OK)
+	{
+		printf("hls: failed to initialize hls encryption  \n");
+		return NGX_ERROR;
+	}
+
+	if (ngx_rtmp_mpegts_open_file(&ctx->file, ctx->stream.data)
+		!= NGX_OK)
+	{
+		return NGX_ERROR;
+	}
+
+	ctx->opened = 1;
+
+	f = ngx_rtmp_hls_get_frag(ctx,hacf, ctx->nfrags);
+
+	ngx_memzero(f, sizeof(*f));
+
+	f->active = 1;
+	f->discont = discont;
+	f->id = id;
+	f->key_id = ctx->key_id;
+
+	ctx->frag_ts = ts;
+
+	/* start fragment with audio to make iPhone happy */
+
+	//ngx_rtmp_hls_flush_audio(s);
+
+	return NGX_OK;
+}
 
 
 #if 0
@@ -428,184 +687,12 @@ CHlsModule::~CHlsModule()
 
 //#else
 
-static uint64_t
-ngx_rtmp_hls_get_fragment_id(ngx_rtmp_session_t *s, uint64_t ts)
-{
-    ngx_rtmp_hls_ctx_t         *ctx;
-    ngx_rtmp_hls_app_conf_t    *hacf;
-
-    ctx = ngx_rtmp_get_module_ctx(s, ngx_rtmp_hls_module);
-
-    hacf = ngx_rtmp_get_module_app_conf(s, ngx_rtmp_hls_module);
-
-    switch (hacf->naming) {
-
-    case NGX_RTMP_HLS_NAMING_TIMESTAMP:
-        return ts;
-
-    case NGX_RTMP_HLS_NAMING_SYSTEM:
-        return (uint64_t) ngx_cached_time->sec * 1000 + ngx_cached_time->msec;
-
-    default: /* NGX_RTMP_HLS_NAMING_SEQUENTIAL */
-        return ctx->frag + ctx->nfrags;
-    }
-}
 
 
-static ngx_int_t
-ngx_rtmp_hls_close_fragment(ngx_rtmp_session_t *s)
-{
-    ngx_rtmp_hls_ctx_t         *ctx;
-
-    ctx = ngx_rtmp_get_module_ctx(s, ngx_rtmp_hls_module);
-    if (ctx == NULL || !ctx->opened) {
-        return NGX_OK;
-    }
-
-    ngx_log_debug1(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                   "hls: close fragment n=%uL", ctx->frag);
-
-    ngx_rtmp_mpegts_close_file(&ctx->file);
-
-    ctx->opened = 0;
-
-    ngx_rtmp_hls_next_frag(s);
-
-    ngx_rtmp_hls_write_playlist(s);
-
-    return NGX_OK;
-}
 
 
-static ngx_int_t
-ngx_rtmp_hls_open_fragment(ngx_rtmp_session_t *s, uint64_t ts,
-    ngx_int_t discont)
-{
-    uint64_t                  id;
-    ngx_fd_t                  fd;
-    ngx_uint_t                g;
-    ngx_rtmp_hls_ctx_t       *ctx;
-    ngx_rtmp_hls_frag_t      *f;
-    ngx_rtmp_hls_app_conf_t  *hacf;
 
-    ctx = ngx_rtmp_get_module_ctx(s, ngx_rtmp_hls_module);
 
-    if (ctx->opened) {
-        return NGX_OK;
-    }
-
-    hacf = ngx_rtmp_get_module_app_conf(s, ngx_rtmp_hls_module);
-
-    if (ngx_rtmp_hls_ensure_directory(s, &hacf->path) != NGX_OK) {
-        return NGX_ERROR;
-    }
-
-    if (hacf->keys &&
-        ngx_rtmp_hls_ensure_directory(s, &hacf->key_path) != NGX_OK)
-    {
-        return NGX_ERROR;
-    }
-
-    id = ngx_rtmp_hls_get_fragment_id(s, ts);
-
-    if (hacf->granularity) {
-        g = (ngx_uint_t) hacf->granularity;
-        id = (uint64_t) (id / g) * g;
-    }
-
-    ngx_sprintf(ctx->stream.data + ctx->stream.len, "%uL.ts%Z", id);
-
-    if (hacf->keys) {
-        if (ctx->key_frags == 0) {
-
-            ctx->key_frags = hacf->frags_per_key - 1;
-            ctx->key_id = id;
-
-            if (RAND_bytes(ctx->key, 16) < 0) {
-                ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
-                              "hls: failed to create key");
-                return NGX_ERROR;
-            }
-
-            ngx_sprintf(ctx->keyfile.data + ctx->keyfile.len, "%uL.key%Z", id);
-
-            fd = ngx_open_file(ctx->keyfile.data, NGX_FILE_WRONLY,
-                               NGX_FILE_TRUNCATE, NGX_FILE_DEFAULT_ACCESS);
-
-            if (fd == NGX_INVALID_FILE) {
-                ngx_log_error(NGX_LOG_ERR, s->connection->log, ngx_errno,
-                              "hls: failed to open key file '%s'",
-                              ctx->keyfile.data);
-                return NGX_ERROR;
-            }
-
-            if (ngx_write_fd(fd, ctx->key, 16) != 16) {
-                ngx_log_error(NGX_LOG_ERR, s->connection->log, ngx_errno,
-                              "hls: failed to write key file '%s'",
-                              ctx->keyfile.data);
-                ngx_close_file(fd);
-                return NGX_ERROR;
-            }
-
-            ngx_close_file(fd);
-
-        } else {
-            if (hacf->frags_per_key) {
-                ctx->key_frags--;
-            }
-
-            if (ngx_set_file_time(ctx->keyfile.data, 0, ngx_cached_time->sec)
-                != NGX_OK)
-            {
-                ngx_log_error(NGX_LOG_ALERT, s->connection->log, ngx_errno,
-                              ngx_set_file_time_n " '%s' failed",
-                              ctx->keyfile.data);
-            }
-        }
-    }
-
-    ngx_log_debug6(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                   "hls: open fragment file='%s', keyfile='%s', "
-                   "frag=%uL, n=%ui, time=%uL, discont=%i",
-                   ctx->stream.data,
-                   ctx->keyfile.data ? ctx->keyfile.data : (u_char *) "",
-                   ctx->frag, ctx->nfrags, ts, discont);
-
-    if (hacf->keys &&
-        ngx_rtmp_mpegts_init_encryption(&ctx->file, ctx->key, 16, ctx->key_id)
-        != NGX_OK)
-    {
-        ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
-                      "hls: failed to initialize hls encryption");
-        return NGX_ERROR;
-    }
-
-    if (ngx_rtmp_mpegts_open_file(&ctx->file, ctx->stream.data,
-                                  s->connection->log)
-        != NGX_OK)
-    {
-        return NGX_ERROR;
-    }
-
-    ctx->opened = 1;
-
-    f = ngx_rtmp_hls_get_frag(s, ctx->nfrags);
-
-    ngx_memzero(f, sizeof(*f));
-
-    f->active = 1;
-    f->discont = discont;
-    f->id = id;
-    f->key_id = ctx->key_id;
-
-    ctx->frag_ts = ts;
-
-    /* start fragment with audio to make iPhone happy */
-
-    ngx_rtmp_hls_flush_audio(s);
-
-    return NGX_OK;
-}
 
 
 static void
@@ -803,108 +890,7 @@ done:
 }
 
 
-static ngx_int_t
-ngx_rtmp_hls_ensure_directory(ngx_rtmp_session_t *s, ngx_str_t *path)
-{
-    size_t                    len;
-    ngx_file_info_t           fi;
-    ngx_rtmp_hls_ctx_t       *ctx;
-    ngx_rtmp_hls_app_conf_t  *hacf;
 
-    static u_char  zpath[NGX_MAX_PATH + 1];
-
-    hacf = ngx_rtmp_get_module_app_conf(s, ngx_rtmp_hls_module);
-
-    if (path->len + 1 > sizeof(zpath)) {
-        ngx_log_error(NGX_LOG_ERR, s->connection->log, 0, "hls: too long path");
-        return NGX_ERROR;
-    }
-
-    ngx_snprintf(zpath, sizeof(zpath), "%V%Z", path);
-
-    if (ngx_file_info(zpath, &fi) == NGX_FILE_ERROR) {
-
-        if (ngx_errno != NGX_ENOENT) {
-            ngx_log_error(NGX_LOG_ERR, s->connection->log, ngx_errno,
-                          "hls: " ngx_file_info_n " failed on '%V'", path);
-            return NGX_ERROR;
-        }
-
-        /* ENOENT */
-
-        if (ngx_create_dir(zpath, NGX_RTMP_HLS_DIR_ACCESS) == NGX_FILE_ERROR) {
-            ngx_log_error(NGX_LOG_ERR, s->connection->log, ngx_errno,
-                          "hls: " ngx_create_dir_n " failed on '%V'", path);
-            return NGX_ERROR;
-        }
-
-        ngx_log_debug1(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                       "hls: directory '%V' created", path);
-
-    } else {
-
-        if (!ngx_is_dir(&fi)) {
-            ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
-                          "hls: '%V' exists and is not a directory", path);
-            return  NGX_ERROR;
-        }
-
-        ngx_log_debug1(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                       "hls: directory '%V' exists", path);
-    }
-
-    if (!hacf->nested) {
-        return NGX_OK;
-    }
-
-    ctx = ngx_rtmp_get_module_ctx(s, ngx_rtmp_hls_module);
-
-    len = path->len;
-    if (path->data[len - 1] == '/') {
-        len--;
-    }
-
-    if (len + 1 + ctx->name.len + 1 > sizeof(zpath)) {
-        ngx_log_error(NGX_LOG_ERR, s->connection->log, 0, "hls: too long path");
-        return NGX_ERROR;
-    }
-
-    ngx_snprintf(zpath, sizeof(zpath) - 1, "%*s/%V%Z", len, path->data,
-                 &ctx->name);
-
-    if (ngx_file_info(zpath, &fi) != NGX_FILE_ERROR) {
-
-        if (ngx_is_dir(&fi)) {
-            ngx_log_debug1(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                           "hls: directory '%s' exists", zpath);
-            return NGX_OK;
-        }
-
-        ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
-                      "hls: '%s' exists and is not a directory", zpath);
-
-        return  NGX_ERROR;
-    }
-
-    if (ngx_errno != NGX_ENOENT) {
-        ngx_log_error(NGX_LOG_ERR, s->connection->log, ngx_errno,
-                      "hls: " ngx_file_info_n " failed on '%s'", zpath);
-        return NGX_ERROR;
-    }
-
-    /* NGX_ENOENT */
-
-    if (ngx_create_dir(zpath, NGX_RTMP_HLS_DIR_ACCESS) == NGX_FILE_ERROR) {
-        ngx_log_error(NGX_LOG_ERR, s->connection->log, ngx_errno,
-                      "hls: " ngx_create_dir_n " failed on '%s'", zpath);
-        return NGX_ERROR;
-    }
-
-    ngx_log_debug1(NGX_LOG_DEBUG_RTMP, s->connection->log, 0,
-                   "hls: directory '%s' created", zpath);
-
-    return NGX_OK;
-}
 
 
 static ngx_int_t
