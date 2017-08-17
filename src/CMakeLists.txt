@@ -1,3 +1,4 @@
+add_definitions("-std=c++0x")
 set(flvmeta_src
   amf.cpp
   amf.h
