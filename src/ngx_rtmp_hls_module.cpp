@@ -834,9 +834,9 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_flush_audio_ex()
 
 	//printf("hls: flush audio pts=%uL, cc=%uL  \n", frame.pts, frame.cc);
 
-	FILE* fp_aac = fopen("111.aac", "ab+");
-	fwrite(b->pos, b->last - b->pos, 1, fp_aac);
-	fclose(fp_aac);
+	//FILE* fp_aac = fopen("111.aac", "ab+");
+	//fwrite(b->pos, b->last - b->pos, 1, fp_aac);
+	//fclose(fp_aac);
 
 	rc = ngx_rtmp_mpegts_write_frame(&this->ctx.file, &frame, b);
 
