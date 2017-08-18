@@ -5,11 +5,22 @@
 #include <vector>
 
 #include "flvmeta.h"
-//#include "check.h"
 #include "dump.h"
-//#include "update.h"
+#include "cmdline.h"
 
 int main(int argc, char ** argv) {
+
+	struct gengetopt_args_info info;
+	if (cmdline_parser(argc, argv, &info) != 0) {
+		exit(1);
+	}
+
+	switch (info.m3u8_flag){
+	default:
+		break;
+	}
+
+
 	int errcode;
 
 	/* flvmeta default options */
