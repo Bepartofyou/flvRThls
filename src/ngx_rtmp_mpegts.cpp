@@ -90,7 +90,7 @@ ngx_rtmp_mpegts_write_file(ngx_rtmp_mpegts_file_t *file, u_char *in,
     static u_char  buf[1024];
 
     if (!file->encrypt) {
-        printf("mpegts: write %uz bytes, cc=%uL  \n", in_size, cc);
+       // printf("mpegts: write %uz bytes, cc=%uL  \n", in_size, cc);
 
         rc = fwrite(in, in_size, 1, file->fd);
         if (rc < 0) {
@@ -102,7 +102,7 @@ ngx_rtmp_mpegts_write_file(ngx_rtmp_mpegts_file_t *file, u_char *in,
 
     /* encrypt */
 
-    printf("mpegts: write %uz encrypted bytes  \n", in_size);
+    //printf("mpegts: write %uz encrypted bytes  \n", in_size);
 
     out = buf;
     out_size = sizeof(buf);
@@ -206,10 +206,10 @@ ngx_rtmp_mpegts_write_frame(ngx_rtmp_mpegts_file_t *file,
     u_char      packet[188], *p, *base;
     ngx_int_t   first, rc;
 
-    printf("mpegts: pid=%ui, sid=%ui, pts=%uL, "
-                   "dts=%uL, key=%ui, size=%ui  \n",
-                   f->pid, f->sid, f->pts, f->dts,
-                   (ngx_uint_t) f->key, (size_t) (b->last - b->pos));
+    //printf("mpegts: pid=%ui, sid=%ui, pts=%uL, "
+    //               "dts=%uL, key=%ui, size=%ui  \n",
+    //               f->pid, f->sid, f->pts, f->dts,
+    //               (ngx_uint_t) f->key, (size_t) (b->last - b->pos));
 
     first = 1;
 
