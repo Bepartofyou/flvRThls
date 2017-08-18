@@ -138,6 +138,4 @@ else(WIN32)
   set(CPACK_PACKAGE_FILE_NAME "flvmeta-${PACKAGE_VERSION}")
 endif(WIN32)
 
-include(CPack)
-
 add_subdirectory(src)
