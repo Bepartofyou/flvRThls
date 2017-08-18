@@ -996,9 +996,9 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_video_ex(uint8_t* data, uint32_t size, uint32
 	out.pos = out.start;
 	out.last = out.pos;
 
-	//if (ngx_rtmp_hls_append_aud(&out) != NGX_OK) {
-	//	printf("hls: error appending AUD NAL  \n");
-	//}
+	if (ngx_rtmp_hls_append_aud(&out) != NGX_OK) {
+		printf("hls: error appending AUD NAL  \n");
+	}
 
 	if (out.end - out.last < (ngx_int_t)size) {
 		printf("hls: not enough buffer for NAL  \n");
