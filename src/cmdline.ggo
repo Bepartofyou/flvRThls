@@ -1,0 +1,11 @@
+version "0.0.0"
+package "flvRThls"
+purpose "Flv To Hls for keyframe seek size.
+
+By Bepartofyou <309554135@qq.com>"
+
+# Options
+option "flvfile" f "the input flv file" string required
+option "keyframe-ID" k "flv keyframe index number" optional int default="0"
+option "m3u8" m "generate m3u8 file Flag with default 'on'"  flag on
+option "ts" t "generate ts files Flag with default 'off'"  flag off

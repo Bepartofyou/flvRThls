@@ -1,5 +1,10 @@
+execute_process(COMMAND gengetopt --input=${PROJECT_SOURCE_DIR}/src/cmdline.ggo --include-getopt --output-dir=${PROJECT_SOURCE_DIR}/src)
+execute_process(COMMAND mv ${PROJECT_SOURCE_DIR}/src/cmdline.c ${PROJECT_SOURCE_DIR}/src/cmdline.cpp)
+
 add_definitions("-std=c++0x")
 set(flvmeta_src
+  cmdline.cpp
+  cmdline.h
   amf.cpp
   amf.h
   avc.cpp
