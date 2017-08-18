@@ -271,7 +271,8 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 				parser->stream->hlsconfig.flag_first_ts = true;
 			}
 
-			if (parser->stream->h264){
+			//if (parser->stream->h264)
+			{
 
 				if (parser->stream->h264_buffer == NULL){
 
@@ -293,7 +294,7 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 					return FLV_ERROR_EOF;
 				}
 
-				static uint8_t video_buffer[11024 * 1024];
+				static uint8_t video_buffer[1024 * 1024 * 10];
 				uint32_t video_len = 0;
 
 				/* read raw h264 */
@@ -525,7 +526,8 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 				parser->stream->hlsconfig.flag_first_ts = true;
 			}
 
-			if (parser->stream->aac){
+			//if (parser->stream->aac)
+			{
 
 				if (parser->stream->aac_buffer == NULL){
 
@@ -541,7 +543,7 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 					}
 				}
 
-				static uint8_t audio_buffer[11024 * 1024];
+				static uint8_t audio_buffer[1024 * 1024];
 				uint32_t audio_len = 0;
 
 				uint8_t adts_header[7] = { 0 };

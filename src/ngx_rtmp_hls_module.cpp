@@ -1032,7 +1032,7 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_video_ex(uint8_t* data, uint32_t size, uint32
 		return NGX_OK;
 	}
 
-	//printf("hls: video pts=%uL, dts=%uL, cc=%uL  \n", frame.pts, frame.dts, frame.cc);
+	printf("hls: video pts=%uL, dts=%uL, cc=%uL  \n", frame.pts, frame.dts, frame.cc);
 
 	//FILE* fp_264 = fopen("111.264", "ab+");
 	//fwrite(out.pos, out.last - out.pos, 1, fp_264);
