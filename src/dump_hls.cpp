@@ -26,6 +26,7 @@
 #include <string.h>
 #include <sstream>
 #include <string>
+#include <math.h>
 
 #ifdef WIN32
 #define sprintf	sprintf_s
