@@ -27,7 +27,8 @@ int main(int argc, char ** argv) {
 	static flvmeta_opts options;
 	options.command = FLVMETA_FULL_DUMP_COMMAND;
 	//options.command = FLVMETA_DUMP_COMMAND;
-	options.input_file = argv[1];
+	options.input_file = info.flvfile_arg;
+	//options.input_file = argv[1];
 	options.output_file = NULL;
 	options.metadata = NULL;
 	options.check_level = FLVMETA_CHECK_LEVEL_WARNING;
