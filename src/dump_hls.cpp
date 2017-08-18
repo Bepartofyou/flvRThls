@@ -99,10 +99,24 @@ static std::string get_flv_key(std::string name) {
 	return name.substr(0, name.rfind(".flv"));
 }
 
+static std::string get_ts_name(flv_parser * parser){
+
+	char conunt[100] = { 0 };
+	sprintf(conunt, "%.4u", parser->stream->hlsconfig.ts_count);
+	std::string strfile = get_flv_key(std::string(parser->stream->flvname)) + "-keyframeID-" +
+		num2str(parser->stream->hlsconfig.ts_fragment_id) + "-" + std::string(conunt) + ".ts";
+
+	//strcpy(name, strfile.c_str());
+	return strfile;
+}
+
 static int hls_segment(flv_parser * parser) {
 
 
 	if (parser->stream->hlsconfig.hls_file == NULL){
+		//bepartofyou
+		parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
+		parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0);
 
 		//int index = parser->stream->flvname.rfind(".flv");
 		std::string hlsname = get_flv_key(std::string(parser->stream->flvname)) + ".m3u8";
@@ -114,6 +128,9 @@ static int hls_segment(flv_parser * parser) {
 		fwrite("#EXT-X-MEDIA-SEQUENCE:0\n", strlen("#EXT-X-MEDIA-SEQUENCE:0\n"), 1, parser->stream->hlsconfig.hls_file);
 	}else
 	{
+		parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
+		parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0);
+
 		uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
 		parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
 
@@ -257,6 +274,9 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 					return FLV_ERROR_EOF;
 				}
 
+				static uint8_t video_buffer[11024 * 1024];
+				uint32_t video_len = 0;
+
 				/* read raw h264 */
 				uint8_t statcode[4] = { 0, 0, 0, 1 };
 				while (parser->stream->current_tag_body_length > 4)
@@ -269,11 +289,17 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 					int x = uint32_be_to_uint32(nalusize);
 					fwrite(statcode, 4, 1, parser->stream->h264);
 
+					memcpy(video_buffer + video_len, statcode, 4);
+					video_len += 4;
+
 					if (flv_read_tag_body(parser->stream, parser->stream->h264_buffer, uint32_be_to_uint32(nalusize)) < uint32_be_to_uint32(nalusize)) {
 						return ERROR_INVALID_TAG;
 					}
 
 					fwrite(parser->stream->h264_buffer, uint32_be_to_uint32(nalusize), 1, parser->stream->h264);
+
+					memcpy(video_buffer + video_len, parser->stream->h264_buffer, uint32_be_to_uint32(nalusize));
+					video_len += uint32_be_to_uint32(nalusize);
 				}
 
 				if (parser->stream->current_tag_body_length != 0)
@@ -282,12 +308,17 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 				//segment TS  last io timestamp
 				parser->stream->hlsconfig.hls_end_ts = flv_tag_get_timestamp(*tag);
 
+				parser->hlsmodule->ngx_rtmp_hls_video_ex(video_buffer, video_len, flv_tag_get_timestamp(*tag), flv_video_tag_frame_type(vt) == FLV_VIDEO_TAG_FRAME_TYPE_KEYFRAME);
+
 
 				if (flv_video_tag_frame_type(vt) == FLV_VIDEO_TAG_FRAME_TYPE_KEYFRAME){
 					parser->stream->hlsconfig.key_frame_count++;
 
-					if (parser->stream->hlsconfig.key_frame_count % parser->stream->hlsconfig.hls_segment_num == 0)
+					if (parser->stream->hlsconfig.key_frame_count &&
+						parser->stream->hlsconfig.key_frame_count % parser->stream->hlsconfig.hls_segment_num == 0)
 					{
+						parser->stream->hlsconfig.ts_fragment_id = parser->stream->hlsconfig.key_frame_count;
+						parser->stream->hlsconfig.ts_count++;
 						hls_segment(parser);
 						parser->stream->hlsconfig.key_frame_current = parser->stream->hlsconfig.key_frame_count;
 						parser->stream->hlsconfig.hls_count++;
@@ -488,6 +519,9 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 					}
 				}
 
+				static uint8_t audio_buffer[11024 * 1024];
+				uint32_t audio_len = 0;
+
 				uint8_t adts_header[7] = { 0 };
 
 				adts_header_generate(adts_header, uint24_be_to_uint32(tag->body_length) - 2, 0,
@@ -495,14 +529,22 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 
 				fwrite(adts_header, 7, 1, parser->stream->aac);
 
+				memcpy(audio_buffer + audio_len, adts_header, 7);
+				audio_len += 7;
+
 				if (flv_read_tag_body(parser->stream, parser->stream->aac_buffer, uint24_be_to_uint32(tag->body_length) - 2) < uint24_be_to_uint32(tag->body_length) - 2) {
 					return ERROR_INVALID_TAG;
 				}
 
 				fwrite(parser->stream->aac_buffer, uint24_be_to_uint32(tag->body_length) - 2, 1, parser->stream->aac);
 
+				memcpy(audio_buffer + audio_len, parser->stream->aac_buffer, uint24_be_to_uint32(tag->body_length) - 2);
+				audio_len += (uint24_be_to_uint32(tag->body_length) - 2);
+
 				//segment TS  last io timestamp
 				parser->stream->hlsconfig.hls_end_ts = flv_tag_get_timestamp(*tag);
+
+				parser->hlsmodule->ngx_rtmp_hls_audio_ex(audio_buffer, audio_len, flv_tag_get_timestamp(*tag), false);
 			}
 		}
 	}

@@ -6,7 +6,7 @@ CHlsModule* CHlsModule::m_instance = NULL;
 CHlsModule::CHlsModule()
 {
 	/* ngx_rtmp_hls_ctx_t */
-	ctx.opened = 1;
+	ctx.opened = 0;
 
 	ctx.file = { 0 };
 
@@ -763,11 +763,13 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_open_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rt
 	return NGX_OK;
 }
 
-ngx_int_t CHlsModule::ngx_rtmp_hls_open_fragment_ex(uint64_t ts, ngx_int_t discont)
+ngx_int_t CHlsModule::ngx_rtmp_hls_open_fragment_ex(const char* ts_file, uint64_t ts, ngx_int_t discont)
 {
 	if (this->ctx.opened) {
 		return NGX_OK;
 	}
+
+	this->ctx.stream = ngx_string(ts_file);
 
 	printf("hls: open fragment file='%s', keyfile='%s', "
 		"frag=%uL, n=%ui, time=%uL, discont=%i  \n",
@@ -779,11 +781,10 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_open_fragment_ex(uint64_t ts, ngx_int_t disco
 		return NGX_ERROR;
 
 	this->ctx.opened = 1;
-	this->ctx.frag_ts = ts;
 
 	/* start fragment with audio to make iPhone happy */
 
-	ngx_rtmp_hls_flush_audio(&this->ctx);
+	ngx_rtmp_hls_flush_audio_ex();
 
 	return NGX_OK;
 }
@@ -800,9 +801,9 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_close_fragment_ex()
 
 	this->ctx.opened = 0;
 
-	ngx_rtmp_hls_next_frag(&this->ctx, &this->hacf);
+	//ngx_rtmp_hls_next_frag(&this->ctx, &this->hacf);
 
-	ngx_rtmp_hls_write_playlist(&this->ctx, &this->hacf);
+	//ngx_rtmp_hls_write_playlist(&this->ctx, &this->hacf);
 
 	return NGX_OK;
 }
@@ -849,25 +850,30 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_flush_audio_ex()
 	return rc;
 }
 
-ngx_int_t CHlsModule::ngx_rtmp_hls_audio_ex(ngx_rtmp_header_t *h, ngx_chain_t *in)
+void CHlsModule::ngx_rtmp_hls_update_fragment_ex(uint64_t ts, ngx_int_t boundary, ngx_uint_t flush_rate)
+{
+	ngx_buf_t                  *b;
+
+	//if (boundary) {
+	//	ngx_rtmp_hls_close_fragment_ex();
+	//	ngx_rtmp_hls_open_fragment_ex(ts, 1);
+	//}
+
+	b = this->ctx.aframe;
+	if (this->ctx.opened && b && b->last > b->pos &&
+		this->ctx.aframe_pts + (uint64_t)this->hacf.max_audio_delay * 90 / flush_rate
+		< ts)
+	{
+		ngx_rtmp_hls_flush_audio_ex();
+	}
+}
+
+ngx_int_t CHlsModule::ngx_rtmp_hls_audio_ex(uint8_t* data, uint32_t size, uint32_t ts, bool keyframe)
 {
 	uint64_t                        pts, est_pts;
 	int64_t                         dpts;
-	size_t                          bsize;
 	ngx_buf_t                      *b;
 	u_char                         *p;
-	ngx_uint_t                      objtype, srindex, chconf, size;
-
-	if (!this->hacf.hls || h->mlen < 2)
-	{
-		return NGX_OK;
-	}
-
-	if (this->codec_ctx.audio_codec_id != NGX_RTMP_AUDIO_AAC ||
-		this->codec_ctx.aac_header == NULL || ngx_rtmp_is_codec_header(in))
-	{
-		return NGX_OK;
-	}
 
 	b = this->ctx.aframe;
 
@@ -889,8 +895,7 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_audio_ex(ngx_rtmp_header_t *h, ngx_chain_t *i
 		b->pos = b->last = b->start;
 	}
 
-	size = h->mlen - 2 + 7;
-	pts = (uint64_t)h->timestamp * 90;
+	pts = (uint64_t)ts * 90;
 
 	if (b->start + size > b->end) {
 		printf("hls: too big audio frame  \n");
@@ -903,10 +908,11 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_audio_ex(ngx_rtmp_header_t *h, ngx_chain_t *i
 	* do it in video handler
 	*/
 
-	ngx_rtmp_hls_update_fragment(&this->ctx, &this->hacf, pts, this->codec_ctx.avc_header == NULL, 2);
+	//ngx_rtmp_hls_update_fragment(&this->ctx, &this->hacf, pts, this->codec_ctx.avc_header == NULL, 2);
+	ngx_rtmp_hls_update_fragment_ex(pts, 0, 2);
 
 	if (b->last + size > b->end) {
-		ngx_rtmp_hls_flush_audio(&this->ctx);
+		ngx_rtmp_hls_flush_audio_ex();
 	}
 
 	printf("hls: audio pts=%uL  \n", pts);
@@ -917,39 +923,19 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_audio_ex(ngx_rtmp_header_t *h, ngx_chain_t *i
 	}
 
 	p = b->last;
-	b->last += 5;
-
 	/* copy payload */
-
-	for (; in && b->last < b->end; in = in->next) {
-
-		bsize = in->buf->last - in->buf->pos;
-		if (b->last + bsize > b->end) {
-			bsize = b->end - b->last;
-		}
-
-		b->last = ngx_cpymem(b->last, in->buf->pos, bsize);
-	}
-
-	/* make up ADTS header */
-
-	if (ngx_rtmp_hls_parse_aac_header(&this->codec_ctx, &objtype, &srindex, &chconf)
-		!= NGX_OK)
-	{
-		printf("hls: aac header error  \n");
-		return NGX_OK;
-	}
+	b->last = ngx_cpymem(b->last, data, size);
 
 	/* we have 5 free bytes + 2 bytes of RTMP frame header */
 
-	p[0] = 0xff;
-	p[1] = 0xf1;
-	p[2] = (u_char)(((objtype - 1) << 6) | (srindex << 2) |
-		((chconf & 0x04) >> 2));
-	p[3] = (u_char)(((chconf & 0x03) << 6) | ((size >> 11) & 0x03));
-	p[4] = (u_char)(size >> 3);
-	p[5] = (u_char)((size << 5) | 0x1f);
-	p[6] = 0xfc;
+	//p[0] = 0xff;
+	//p[1] = 0xf1;
+	//p[2] = (u_char)(((objtype - 1) << 6) | (srindex << 2) |
+	//	((chconf & 0x04) >> 2));
+	//p[3] = (u_char)(((chconf & 0x03) << 6) | ((size >> 11) & 0x03));
+	//p[4] = (u_char)(size >> 3);
+	//p[5] = (u_char)((size << 5) | 0x1f);
+	//p[6] = 0xfc;
 
 	if (p != b->start) {
 		this->ctx.aframe_num++;
@@ -991,59 +977,17 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_audio_ex(ngx_rtmp_header_t *h, ngx_chain_t *i
 	return NGX_OK;
 }
 
-ngx_int_t CHlsModule::ngx_rtmp_hls_video_ex(ngx_rtmp_header_t *h, ngx_chain_t *in)
+ngx_int_t CHlsModule::ngx_rtmp_hls_video_ex(uint8_t* data, uint32_t size, uint32_t ts, bool keyframe)
 {
-	u_char                         *p;
-	uint8_t                         fmt, ftype, htype, nal_type, src_nal_type;
-	uint32_t                        len, rlen;
 	ngx_buf_t                       out, *b;
 	uint32_t                        cts;
 	ngx_rtmp_mpegts_frame_t         frame;
-	ngx_uint_t                      nal_bytes;
-	ngx_int_t                       aud_sent, sps_pps_sent, boundary;
 	static u_char                   buffer[NGX_RTMP_HLS_BUFSIZE];
-
-	if (!this->hacf.hls || this->codec_ctx.avc_header == NULL || h->mlen < 1)
-	{
-		return NGX_OK;
-	}
 
 	/* Only H264 is supported */
 	if (this->codec_ctx.video_codec_id != NGX_RTMP_VIDEO_H264) {
 		return NGX_OK;
 	}
-
-	p = in->buf->pos;
-	if (ngx_rtmp_hls_copy(&fmt, &p, 1, &in) != NGX_OK) {
-		return NGX_ERROR;
-	}
-
-	/* 1: keyframe (IDR)
-	* 2: inter frame
-	* 3: disposable inter frame */
-
-	ftype = (fmt & 0xf0) >> 4;
-
-	/* H264 HDR/PICT */
-
-	if (ngx_rtmp_hls_copy(&htype, &p, 1, &in) != NGX_OK) {
-		return NGX_ERROR;
-	}
-
-	/* proceed only with PICT */
-
-	if (htype != 1) {
-		return NGX_OK;
-	}
-
-	/* 3 bytes: decoder delay */
-
-	if (ngx_rtmp_hls_copy(&cts, &p, 3, &in) != NGX_OK) {
-		return NGX_ERROR;
-	}
-
-	cts = ((cts & 0x00FF0000) >> 16) | ((cts & 0x000000FF) << 16) |
-		(cts & 0x0000FF00);
 
 	ngx_memzero(&out, sizeof(out));
 
@@ -1052,107 +996,27 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_video_ex(ngx_rtmp_header_t *h, ngx_chain_t *i
 	out.pos = out.start;
 	out.last = out.pos;
 
-	nal_bytes = this->codec_ctx.avc_nal_bytes;
-	aud_sent = 0;
-	sps_pps_sent = 0;
+	//if (ngx_rtmp_hls_append_aud(&out) != NGX_OK) {
+	//	printf("hls: error appending AUD NAL  \n");
+	//}
 
-	while (in) {
-		if (ngx_rtmp_hls_copy(&rlen, &p, nal_bytes, &in) != NGX_OK) {
-			return NGX_OK;
-		}
-
-		len = 0;
-		ngx_rtmp_rmemcpy(&len, &rlen, nal_bytes);
-
-		if (len == 0) {
-			continue;
-		}
-
-		if (ngx_rtmp_hls_copy(&src_nal_type, &p, 1, &in) != NGX_OK) {
-			return NGX_OK;
-		}
-
-		nal_type = src_nal_type & 0x1f;
-
-		printf("hls: h264 NAL type=%ui, len=%uD  \n",
-			(ngx_uint_t)nal_type, len);
-
-		if (nal_type >= 7 && nal_type <= 9) {
-			if (ngx_rtmp_hls_copy(NULL, &p, len - 1, &in) != NGX_OK) {
-				return NGX_ERROR;
-			}
-			continue;
-		}
-
-		if (!aud_sent) {
-			switch (nal_type) {
-			case 1:
-			case 5:
-			case 6:
-				if (ngx_rtmp_hls_append_aud(&out) != NGX_OK) {
-					printf("hls: error appending AUD NAL  \n");
-				}
-			case 9:
-				aud_sent = 1;
-				break;
-			}
-		}
-
-		switch (nal_type) {
-		case 1:
-			sps_pps_sent = 0;
-			break;
-		case 5:
-			if (sps_pps_sent) {
-				break;
-			}
-			if (ngx_rtmp_hls_append_sps_pps(&this->codec_ctx, &this->ctx, &out) != NGX_OK) {
-				printf("hls: error appenging SPS/PPS NALs  \n");
-			}
-			sps_pps_sent = 1;
-			break;
-		}
-
-		/* AnnexB prefix */
-
-		if (out.end - out.last < 5) {
-			printf("hls: not enough buffer for AnnexB prefix  \n");
-			return NGX_OK;
-		}
-
-		/* first AnnexB prefix is long (4 bytes) */
-
-		if (out.last == out.pos) {
-			*out.last++ = 0;
-		}
-
-		*out.last++ = 0;
-		*out.last++ = 0;
-		*out.last++ = 1;
-		*out.last++ = src_nal_type;
-
-		/* NAL body */
-
-		if (out.end - out.last < (ngx_int_t)len) {
-			printf("hls: not enough buffer for NAL  \n");
-			return NGX_OK;
-		}
-
-		if (ngx_rtmp_hls_copy(out.last, &p, len - 1, &in) != NGX_OK) {
-			return NGX_ERROR;
-		}
-
-		out.last += (len - 1);
+	if (out.end - out.last < (ngx_int_t)size) {
+		printf("hls: not enough buffer for NAL  \n");
+		return NGX_OK;
 	}
+	out.last = ngx_cpymem(out.last, data, size);
+
 
 	ngx_memzero(&frame, sizeof(frame));
 
+	cts = 0;
+
 	frame.cc = this->ctx.video_cc;
-	frame.dts = (uint64_t)h->timestamp * 90;
+	frame.dts = (uint64_t)ts * 90;
 	frame.pts = frame.dts + cts * 90;
 	frame.pid = 0x100;
 	frame.sid = 0xe0;
-	frame.key = (ftype == 1);
+	frame.key = keyframe;
 
 	/*
 	* start new fragment if
@@ -1161,10 +1025,8 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_video_ex(ngx_rtmp_header_t *h, ngx_chain_t *i
 	*/
 
 	b = this->ctx.aframe;
-	boundary = frame.key && (this->codec_ctx.aac_header == NULL || !this->ctx.opened ||
-		(b && b->last > b->pos));
-
-	ngx_rtmp_hls_update_fragment(&this->ctx, &this->hacf, frame.dts, boundary, 1);
+	if (frame.key && (b && b->last > b->pos))
+		ngx_rtmp_hls_update_fragment_ex(frame.dts, 0, 1);
 
 	if (!this->ctx.opened) {
 		return NGX_OK;

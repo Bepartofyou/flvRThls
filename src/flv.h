@@ -194,6 +194,8 @@ typedef struct __hls_config {
 	uint32_t hls_segment_num;
 	uint32_t key_frame_count;
 	uint32_t key_frame_current;
+	uint32_t ts_fragment_id;
+	uint32_t ts_count;
 
 	uint32_t hls_segment_duration;
 	uint32_t hls_count;

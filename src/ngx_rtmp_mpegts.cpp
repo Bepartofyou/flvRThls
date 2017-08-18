@@ -352,6 +352,7 @@ ngx_rtmp_mpegts_init_encryption(ngx_rtmp_mpegts_file_t *file,
 ngx_int_t
 ngx_rtmp_mpegts_open_file(ngx_rtmp_mpegts_file_t *file, u_char *path)
 {
+	printf("%s    %d\n", (const char*)path, strlen((const char*)path));
     file->fd = fopen((const char*)path, "wb");
 
     if (file->fd == NULL) {

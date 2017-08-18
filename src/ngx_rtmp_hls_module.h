@@ -311,7 +311,7 @@ public:
 private:
 	static CHlsModule* m_instance;
 
-private:
+public:
 	ngx_rtmp_hls_ctx_t       ctx;
 	ngx_rtmp_codec_ctx_t     codec_ctx;
 	ngx_rtmp_hls_app_conf_t  hacf;
@@ -360,11 +360,16 @@ public:
 		ngx_chain_t *in);
 
 	///////
-	ngx_int_t ngx_rtmp_hls_open_fragment_ex(uint64_t ts, ngx_int_t discont);
+	ngx_int_t ngx_rtmp_hls_open_fragment_ex(const char* ts_file, uint64_t ts, ngx_int_t discont);
 	ngx_int_t ngx_rtmp_hls_close_fragment_ex();
 	ngx_int_t ngx_rtmp_hls_flush_audio_ex();
-	ngx_int_t ngx_rtmp_hls_audio_ex(ngx_rtmp_header_t *h, ngx_chain_t *in);
-	ngx_int_t ngx_rtmp_hls_video_ex(ngx_rtmp_header_t *h,ngx_chain_t *in);
+	//ngx_int_t ngx_rtmp_hls_audio_ex(ngx_rtmp_header_t *h, ngx_chain_t *in);
+
+	ngx_int_t ngx_rtmp_hls_audio_ex(uint8_t* data, uint32_t size, uint32_t ts, bool keyframe);
+	//ngx_int_t ngx_rtmp_hls_video_ex(ngx_rtmp_header_t *h,ngx_chain_t *in);
+	ngx_int_t ngx_rtmp_hls_video_ex(uint8_t* data, uint32_t size, uint32_t ts, bool keyframe);
+
+	void ngx_rtmp_hls_update_fragment_ex(uint64_t ts, ngx_int_t boundary, ngx_uint_t flush_rate);
 };
 
 #endif /* _HLS_MODULE_H_INCLUDED_ */
