@@ -23,18 +23,6 @@ set(flvmeta_src
   ${CMAKE_BINARY_DIR}/config.h
 )
 
-# add support for getopt and gettext in windows
-if(WIN32)
-  set(flvmeta_src
-    ${flvmeta_src}
-    compat/getopt1.c
-    compat/getopt.c
-    compat/getopt.h
-    compat/gettext.h
-  )
-  include_directories(compat)
-endif(WIN32)
-
 # static build
 if(WIN32)
   add_definitions(-DYAML_DECLARE_STATIC)
