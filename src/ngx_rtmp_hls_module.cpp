@@ -957,8 +957,8 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_audio_ex(uint8_t* data, uint32_t size, uint32
 		this->codec_ctx.sample_rate;
 	dpts = (int64_t)(est_pts - pts);
 
-	printf("hls: audio sync dpts=%L (%.5fs)  \n",
-		dpts, dpts / 90000.);
+	//printf("hls: audio sync dpts=%L (%.5fs)  \n",
+	//	dpts, dpts / 90000.);
 
 	if (dpts <= (int64_t)this->hacf.sync * 90 &&
 		dpts >= (int64_t)this->hacf.sync * -90)
@@ -971,8 +971,8 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_audio_ex(uint8_t* data, uint32_t size, uint32
 	this->ctx.aframe_base = pts;
 	this->ctx.aframe_num = 1;
 
-	printf("hls: audio sync gap dpts=%L (%.5fs)  \n",
-		dpts, dpts / 90000.);
+	//printf("hls: audio sync gap dpts=%L (%.5fs)  \n",
+	//	dpts, dpts / 90000.);
 
 	return NGX_OK;
 }
