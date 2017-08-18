@@ -3,42 +3,6 @@ project(flvRThls)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
 
-set(FLVMETA_VERSION "1.2.1")
-set(FLVMETA_RELEASE yes)
-
-# check whether we are building a release or a git snapshot
-if(NOT FLVMETA_RELEASE)
-  # check for git
-  find_program(GIT "git")
-  mark_as_advanced(GIT)
-  # check whether we are in a git repository
-  find_file(DOT_GIT ".git" ${CMAKE_SOURCE_DIR})
-  mark_as_advanced(DOT_GIT)
-  if(GIT AND DOT_GIT)
-    # retrieve current revision
-    execute_process(
-      COMMAND "${GIT}" rev-parse --short HEAD
-      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-      OUTPUT_VARIABLE   GIT_RELEASE
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    set(FLVMETA_VERSION "${FLVMETA_VERSION}-dev+g${GIT_RELEASE}")
-  endif(GIT AND DOT_GIT)
-endif(NOT FLVMETA_RELEASE)
-
-# generic variables
-set(PACKAGE           "flvmeta")
-set(PACKAGE_NAME      ${PACKAGE})
-set(PACKAGE_BUGREPORT "flvmeta-discussion@googlegroups.com")
-set(PACKAGE_VERSION   "${FLVMETA_VERSION}")
-set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
-
-# build options
-set(
-  FLVMETA_USE_SYSTEM_LIBYAML FALSE
-  CACHE BOOL "Link flvmeta to the installed version of libyaml"
-)
-
 #platform tests
 include(CheckFunctionExists)
 include(CheckSymbolExists)
@@ -113,29 +77,5 @@ if(MSVC)
   # C runtime deprecation in Visual C++ 2005 and later
   add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)
 endif(MSVC)
-
-# installation
-set(CPACK_PACKAGE_VENDOR "Marc Noirot <marc.noirot@gmail.com>")
-set(CPACK_PACKAGE_VERSION ${FLVMETA_VERSION})
-set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE.md)
-set(CPACK_RESOURCE_FILE_README ${CMAKE_SOURCE_DIR}/README.md)
-set(CPACK_SOURCE_IGNORE_FILES "/*build*;/CVS/;/\\\\.svn/;/\\\\.bzr/;/\\\\.hg/;/\\\\.git/;\\\\.swp$;\\\\.#;/#")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "flvmeta-${PACKAGE_VERSION}-src")
-
-if(WIN32)
-  if (CMAKE_CL_64)
-    set(EXECUTABLE_TYPE "64")
-  else(CMAKE_CL_64)
-    set(EXECUTABLE_TYPE "32")
-  endif(CMAKE_CL_64)
-
-  set(CPACK_PACKAGE_FILE_NAME "flvmeta-${PACKAGE_VERSION}-win${EXECUTABLE_TYPE}")
-  set(CPACK_GENERATOR ZIP)
-  install(FILES ${CMAKE_SOURCE_DIR}/README.md       DESTINATION . RENAME Readme.txt)
-  install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.md      DESTINATION . RENAME License.txt)
-  install(FILES ${CMAKE_SOURCE_DIR}/CHANGELOG.md    DESTINATION . RENAME Changelog.txt)
-else(WIN32)
-  set(CPACK_PACKAGE_FILE_NAME "flvmeta-${PACKAGE_VERSION}")
-endif(WIN32)
 
 add_subdirectory(src)

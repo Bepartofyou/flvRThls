@@ -16,8 +16,6 @@ set(flvmeta_src
   dump_raw.h
   dump_xml.cpp
   dump_xml.h
-  # dump_yaml.cpp
-  # dump_yaml.h
   flv.cpp
   flv.h
   flvmeta.cpp
