@@ -832,7 +832,7 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_flush_audio_ex()
 	frame.pid = 0x101;
 	frame.sid = 0xc0;
 
-	printf("hls: flush audio pts=%uL, cc=%uL  \n", frame.pts, frame.cc);
+	//printf("hls: flush audio pts=%uL, cc=%uL  \n", frame.pts, frame.cc);
 
 	FILE* fp_aac = fopen("111.aac", "ab+");
 	fwrite(b->pos, b->last - b->pos, 1, fp_aac);
@@ -915,7 +915,7 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_audio_ex(uint8_t* data, uint32_t size, uint32
 		ngx_rtmp_hls_flush_audio_ex();
 	}
 
-	printf("hls: audio pts=%uL  \n", pts);
+	//printf("hls: audio pts=%uL  \n", pts);
 
 	if (b->last + 7 > b->end) {
 		printf("hls: not enough buffer for audio header  \n");
@@ -1032,7 +1032,7 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_video_ex(uint8_t* data, uint32_t size, uint32
 		return NGX_OK;
 	}
 
-	printf("hls: video pts=%uL, dts=%uL, cc=%uL  \n", frame.pts, frame.dts, frame.cc);
+	//printf("hls: video pts=%uL, dts=%uL, cc=%uL  \n", frame.pts, frame.dts, frame.cc);
 
 	FILE* fp_264 = fopen("111.264", "ab+");
 	fwrite(out.pos, out.last - out.pos, 1, fp_264);
@@ -1571,7 +1571,7 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_flush_audio(ngx_rtmp_hls_ctx_t *ctx)
 	frame.pid = 0x101;
 	frame.sid = 0xc0;
 
-	printf("hls: flush audio pts=%uL, cc=%uL  \n", frame.pts,frame.cc);
+	//printf("hls: flush audio pts=%uL, cc=%uL  \n", frame.pts,frame.cc);
 
 	FILE* fp_aac = fopen("111.aac", "ab+");
 	fwrite(b->pos,b->last-b->pos,1,fp_aac);
@@ -1651,7 +1651,7 @@ ngx_chain_t *in)
 		ngx_rtmp_hls_flush_audio(ctx);
 	}
 
-	printf("hls: audio pts=%uL  \n", pts);
+	//printf("hls: audio pts=%uL  \n", pts);
 
 	if (b->last + 7 > b->end) {
 		printf("hls: not enough buffer for audio header  \n");
@@ -1713,8 +1713,8 @@ ngx_chain_t *in)
 		codec_ctx->sample_rate;
 	dpts = (int64_t) (est_pts - pts);
 
-	printf("hls: audio sync dpts=%L (%.5fs)  \n",
-		dpts, dpts / 90000.);
+	//printf("hls: audio sync dpts=%L (%.5fs)  \n",
+	//	dpts, dpts / 90000.);
 
 	if (dpts <= (int64_t) hacf->sync * 90 &&
 		dpts >= (int64_t) hacf->sync * -90)
@@ -1727,8 +1727,8 @@ ngx_chain_t *in)
 	ctx->aframe_base = pts;
 	ctx->aframe_num  = 1;
 
-	printf("hls: audio sync gap dpts=%L (%.5fs)  \n",
-		dpts, dpts / 90000.);
+	//printf("hls: audio sync gap dpts=%L (%.5fs)  \n",
+	//	dpts, dpts / 90000.);
 
 	return NGX_OK;
 }
@@ -1914,7 +1914,7 @@ ngx_chain_t *in)
 		return NGX_OK;
 	}
 
-	printf("hls: video pts=%uL, dts=%uL, cc=%uL  \n", frame.pts, frame.dts, frame.cc);
+	//printf("hls: video pts=%uL, dts=%uL, cc=%uL  \n", frame.pts, frame.dts, frame.cc);
 
 	FILE* fp_264 = fopen("111.264", "ab+");
 	fwrite(out.pos,out.last-out.pos,1,fp_264);
