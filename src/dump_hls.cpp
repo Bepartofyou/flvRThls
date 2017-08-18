@@ -122,10 +122,15 @@ static int hls_segment(flv_parser * parser) {
 		std::string hlsname = get_flv_key(std::string(parser->stream->flvname)) + ".m3u8";
 		parser->stream->hlsconfig.hls_file = fopen(hlsname.c_str(), "wb");
 
-		fwrite("#EXTM3U\n", strlen("#EXTM3U\n"), 1, parser->stream->hlsconfig.hls_file);
-		fwrite("#EXT-X-VERSION:3\n", strlen("#EXT-X-VERSION:3\n"), 1, parser->stream->hlsconfig.hls_file);
-		fwrite("#EXT-X-TARGETDURATION:12\n", strlen("#EXT-X-TARGETDURATION:12\n"), 1, parser->stream->hlsconfig.hls_file);
-		fwrite("#EXT-X-MEDIA-SEQUENCE:0\n", strlen("#EXT-X-MEDIA-SEQUENCE:0\n"), 1, parser->stream->hlsconfig.hls_file);
+		//fwrite("#EXTM3U\n", strlen("#EXTM3U\n"), 1, parser->stream->hlsconfig.hls_file);
+		//fwrite("#EXT-X-VERSION:3\n", strlen("#EXT-X-VERSION:3\n"), 1, parser->stream->hlsconfig.hls_file);
+		//fwrite("#EXT-X-TARGETDURATION:12\n", strlen("#EXT-X-TARGETDURATION:12\n"), 1, parser->stream->hlsconfig.hls_file);
+		//fwrite("#EXT-X-MEDIA-SEQUENCE:0\n", strlen("#EXT-X-MEDIA-SEQUENCE:0\n"), 1, parser->stream->hlsconfig.hls_file);
+
+		parser->hls_content.push_back("#EXTM3U\n");		
+		parser->hls_content.push_back("#EXT-X-VERSION:3\n");	
+		parser->hls_content.push_back("#EXT-X-TARGETDURATION:12\n");	
+		parser->hls_content.push_back("#EXT-X-MEDIA-SEQUENCE:0\n");
 	}else
 	{
 		parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
@@ -141,21 +146,34 @@ static int hls_segment(flv_parser * parser) {
 		sprintf(ts, "%.6f", (double)interval / (double)1000);
 		//std::string tmp = "#EXTINF:" + num2str((double)interval/(double)1000) + ",\n";
 		std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
-		fwrite(strts.c_str(), strts.size(), 1, parser->stream->hlsconfig.hls_file);
+
+		//fwrite(strts.c_str(), strts.size(), 1, parser->stream->hlsconfig.hls_file);
+		parser->hls_content.push_back(strts);
 
 		char conunt[100] = { 0 };
 		sprintf(conunt, "%.4u", parser->stream->hlsconfig.hls_count);
 		std::string strfile = get_flv_key(std::string(parser->stream->flvname)) + "-keyframeID-" +
 			num2str(parser->stream->hlsconfig.key_frame_current) + "-" + std::string(conunt) + ".ts\n";
-		fwrite(strfile.c_str(), strfile.size(), 1, parser->stream->hlsconfig.hls_file);
 
-		//fwrite("#EXTINF:6.000000,\n", strlen("#EXTINF:6.000000,\n"), 1, parser->stream->hlsconfig.hls_file);
-		//fwrite("test-0000.ts\n", strlen("test-0000.ts\n"), 1, parser->stream->hlsconfig.hls_file);
-		fflush(parser->stream->hlsconfig.hls_file);
+		//fwrite(strfile.c_str(), strfile.size(), 1, parser->stream->hlsconfig.hls_file);
+		//fflush(parser->stream->hlsconfig.hls_file);
+		parser->hls_content.push_back(strfile);
+
 		//end
 		if (parser->stream->hlsconfig.key_frame_count == parser->stream->keyframePos.size()){
-			fwrite("#EXT-X-ENDLIST", strlen("#EXT-X-ENDLIST"), 1, parser->stream->hlsconfig.hls_file);
+			//fwrite("#EXT-X-ENDLIST", strlen("#EXT-X-ENDLIST"), 1, parser->stream->hlsconfig.hls_file);
+			//fclose(parser->stream->hlsconfig.hls_file);
+
+			parser->hls_content.push_back("#EXT-X-ENDLIST");
+			std::string strts = "#EXT-X-TARGETDURATION:" + num2str(ceil((double)parser->stream->hlsconfig.hls_segment_duration/(double)1000)) + "\n";
+			parser->hls_content[2] = strts;
+
+			for (int index = 0; index < parser->hls_content.size(); index++)
+				fwrite(parser->hls_content[index].c_str(), parser->hls_content[index].size(), 1, parser->stream->hlsconfig.hls_file);
+
 			fclose(parser->stream->hlsconfig.hls_file);
+
+			std::vector<std::string>().swap(parser->hls_content);
 		}
 	}
 

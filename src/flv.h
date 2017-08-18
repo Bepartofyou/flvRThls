@@ -260,6 +260,7 @@ size_t flv_write_tag(FILE * out, const flv_tag * tag);
 typedef struct __flv_parser {
     flv_stream * stream;
 	CHlsModule* hlsmodule;
+	std::vector<std::string> hls_content;
 
     void * user_data;
     int (* on_header)(flv_header * header, struct __flv_parser * parser);
