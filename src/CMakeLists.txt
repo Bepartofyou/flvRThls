@@ -16,8 +16,8 @@ set(flvmeta_src
   dump_raw.h
   dump_xml.cpp
   dump_xml.h
-  dump_yaml.cpp
-  dump_yaml.h
+  # dump_yaml.cpp
+  # dump_yaml.h
   flv.cpp
   flv.h
   flvmeta.cpp
@@ -61,17 +61,17 @@ endif(WIN32)
 add_executable(flvmeta ${flvmeta_src})
 
 # libyaml
-if(FLVMETA_USE_SYSTEM_LIBYAML)
+#if(FLVMETA_USE_SYSTEM_LIBYAML)
   # search for libyaml on the system, link with it
-  find_package(LibYAML REQUIRED)
-  include_directories(${LIBYAML_INCLUDE_DIR})
-  target_link_libraries(flvmeta ${LIBYAML_LIBRARIES})
-else(FLVMETA_USE_SYSTEM_LIBYAML)
+  #  find_package(LibYAML REQUIRED)
+  #include_directories(${LIBYAML_INCLUDE_DIR})
+  # target_link_libraries(flvmeta ${LIBYAML_LIBRARIES})
+  #else(FLVMETA_USE_SYSTEM_LIBYAML)
   # use bundled version of libyaml
-  include_directories(libyaml)
-  add_subdirectory(libyaml)
-  target_link_libraries(flvmeta yaml)
-endif(FLVMETA_USE_SYSTEM_LIBYAML)
+  # include_directories(libyaml)
+  # add_subdirectory(libyaml)
+  #  target_link_libraries(flvmeta yaml)
+  #endif(FLVMETA_USE_SYSTEM_LIBYAML)
 
 if(WIN32)
   install(

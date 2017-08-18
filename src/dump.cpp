@@ -25,7 +25,7 @@
 #include "dump_json.h"
 #include "dump_raw.h"
 #include "dump_xml.h"
-#include "dump_yaml.h"
+//#include "dump_yaml.h"
 
 #include <string.h>
 
@@ -154,8 +154,8 @@ int dump_metadata(const flvmeta_opts * options) {
         case FLVMETA_FORMAT_XML:
             dump_xml_setup_metadata_dump(&parser);
             break;
-        case FLVMETA_FORMAT_YAML:
-            dump_yaml_setup_metadata_dump(&parser);
+        //case FLVMETA_FORMAT_YAML:
+        //    dump_yaml_setup_metadata_dump(&parser);
 
 			//////
 		case FLVMETA_FORMAT_HLS:
@@ -186,9 +186,9 @@ int dump_flv_file(const flvmeta_opts * options, flv_parser * parser) {
         case FLVMETA_FORMAT_XML:
             //return dump_xml_file(&parser, options);
 			return dump_xml_file(parser, options);
-        case FLVMETA_FORMAT_YAML:
+        //case FLVMETA_FORMAT_YAML:
             //return dump_yaml_file(&parser, options);
-			return dump_yaml_file(parser, options);
+		//	return dump_yaml_file(parser, options);
 			////
 		case FLVMETA_FORMAT_HLS:
 			//return dump_hls_file_ex(&parser, options);
@@ -232,8 +232,8 @@ int dump_amf_data(const amf_data * data, const flvmeta_opts * options) {
             return dump_raw_amf_data(data);
         case FLVMETA_FORMAT_XML:
             return dump_xml_amf_data(data);
-        case FLVMETA_FORMAT_YAML:
-            return dump_yaml_amf_data(data);
+       // case FLVMETA_FORMAT_YAML:
+        //    return dump_yaml_amf_data(data);
         default:
             return OK;
     }
