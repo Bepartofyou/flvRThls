@@ -301,6 +301,10 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 				uint8_t statcode[4] = { 0, 0, 0, 1 };
 				while (parser->stream->current_tag_body_length > 4)
 				{
+					uint8_t   aud_nal[] = { 0x00, 0x00, 0x00, 0x01, 0x09, 0xf0 };
+					memcpy(video_buffer + video_len, aud_nal, 6);
+					video_len += 6;
+
 					uint32_nal nalusize = { 0 };
 					if (flv_read_tag_body(parser->stream, &nalusize, sizeof(uint32_t)) < sizeof(uint32_t)) {
 						return FLV_ERROR_EOF;
