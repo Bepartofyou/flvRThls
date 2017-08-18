@@ -245,16 +245,16 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 
 			parser->stream->h264_header_count++;
 
-			if (parser->stream->h264 == NULL){
-				std::string h264_name = num2str(parser->stream->h264_header_count) + ".h264";
-				parser->stream->h264 = fopen(h264_name.c_str(), "wb");
-			}
-			else{
-				fclose(parser->stream->h264);
+			//if (parser->stream->h264 == NULL){
+			//	std::string h264_name = num2str(parser->stream->h264_header_count) + ".h264";
+			//	parser->stream->h264 = fopen(h264_name.c_str(), "wb");
+			//}
+			//else{
+			//	fclose(parser->stream->h264);
 
-				std::string h264_name = num2str(parser->stream->h264_header_count) + ".h264";
-				parser->stream->h264 = fopen(h264_name.c_str(), "wb");
-			}
+			//	std::string h264_name = num2str(parser->stream->h264_header_count) + ".h264";
+			//	parser->stream->h264 = fopen(h264_name.c_str(), "wb");
+			//}
 		}
 		else{
 
@@ -305,7 +305,9 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 					}
 
 					int x = uint32_be_to_uint32(nalusize);
-					fwrite(statcode, 4, 1, parser->stream->h264);
+
+					if (parser->stream->h264)
+						fwrite(statcode, 4, 1, parser->stream->h264);
 
 					memcpy(video_buffer + video_len, statcode, 4);
 					video_len += 4;
@@ -314,7 +316,8 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 						return ERROR_INVALID_TAG;
 					}
 
-					fwrite(parser->stream->h264_buffer, uint32_be_to_uint32(nalusize), 1, parser->stream->h264);
+					if (parser->stream->h264)
+						fwrite(parser->stream->h264_buffer, uint32_be_to_uint32(nalusize), 1, parser->stream->h264);
 
 					memcpy(video_buffer + video_len, parser->stream->h264_buffer, uint32_be_to_uint32(nalusize));
 					video_len += uint32_be_to_uint32(nalusize);
@@ -497,16 +500,16 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 
 			parser->stream->aac_header_count++;
 
-			if (parser->stream->aac == NULL){
-				std::string aac_name = num2str(parser->stream->aac_header_count) + ".aac";
-				parser->stream->aac = fopen(aac_name.c_str(), "wb");
-			}
-			else{
-				fclose(parser->stream->aac);
+			//if (parser->stream->aac == NULL){
+			//	std::string aac_name = num2str(parser->stream->aac_header_count) + ".aac";
+			//	parser->stream->aac = fopen(aac_name.c_str(), "wb");
+			//}
+			//else{
+			//	fclose(parser->stream->aac);
 
-				std::string aac_name = num2str(parser->stream->aac_header_count) + ".aac";
-				parser->stream->aac = fopen(aac_name.c_str(), "wb");
-			}
+			//	std::string aac_name = num2str(parser->stream->aac_header_count) + ".aac";
+			//	parser->stream->aac = fopen(aac_name.c_str(), "wb");
+			//}
 		}
 		else{
 			/*get first pkt ts*/
@@ -545,7 +548,8 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 				adts_header_generate(adts_header, uint24_be_to_uint32(tag->body_length) - 2, 0,
 					parser->stream->audioconfig.channels, parser->stream->audioconfig.profile, parser->stream->audioconfig.samplerate_index);
 
-				fwrite(adts_header, 7, 1, parser->stream->aac);
+				if (parser->stream->aac)
+					fwrite(adts_header, 7, 1, parser->stream->aac);
 
 				memcpy(audio_buffer + audio_len, adts_header, 7);
 				audio_len += 7;
@@ -554,7 +558,8 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 					return ERROR_INVALID_TAG;
 				}
 
-				fwrite(parser->stream->aac_buffer, uint24_be_to_uint32(tag->body_length) - 2, 1, parser->stream->aac);
+				if (parser->stream->aac)
+					fwrite(parser->stream->aac_buffer, uint24_be_to_uint32(tag->body_length) - 2, 1, parser->stream->aac);
 
 				memcpy(audio_buffer + audio_len, parser->stream->aac_buffer, uint24_be_to_uint32(tag->body_length) - 2);
 				audio_len += (uint24_be_to_uint32(tag->body_length) - 2);

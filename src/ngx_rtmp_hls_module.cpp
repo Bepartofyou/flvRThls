@@ -1034,9 +1034,9 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_video_ex(uint8_t* data, uint32_t size, uint32
 
 	//printf("hls: video pts=%uL, dts=%uL, cc=%uL  \n", frame.pts, frame.dts, frame.cc);
 
-	FILE* fp_264 = fopen("111.264", "ab+");
-	fwrite(out.pos, out.last - out.pos, 1, fp_264);
-	fclose(fp_264);
+	//FILE* fp_264 = fopen("111.264", "ab+");
+	//fwrite(out.pos, out.last - out.pos, 1, fp_264);
+	//fclose(fp_264);
 
 	if (ngx_rtmp_mpegts_write_frame(&this->ctx.file, &frame, &out) != NGX_OK) {
 		printf("hls: video frame failed  \n");
@@ -1573,9 +1573,9 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_flush_audio(ngx_rtmp_hls_ctx_t *ctx)
 
 	//printf("hls: flush audio pts=%uL, cc=%uL  \n", frame.pts,frame.cc);
 
-	FILE* fp_aac = fopen("111.aac", "ab+");
-	fwrite(b->pos,b->last-b->pos,1,fp_aac);
-	fclose(fp_aac);
+	//FILE* fp_aac = fopen("111.aac", "ab+");
+	//fwrite(b->pos,b->last-b->pos,1,fp_aac);
+	//fclose(fp_aac);
 
 	rc = ngx_rtmp_mpegts_write_frame(&ctx->file, &frame, b);
 
