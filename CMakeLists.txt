@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 project(flvRThls)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
@@ -141,15 +141,3 @@ endif(WIN32)
 include(CPack)
 
 add_subdirectory(src)
-add_subdirectory(man)
-
-# check unit testing framework
-find_package(Check)
-
-# Enable unit testing if Check has been found
-if(CHECK_FOUND)
-  # tests
-  #  enable_testing()
-
-  #add_subdirectory(tests)
-endif(CHECK_FOUND)
