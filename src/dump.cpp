@@ -22,9 +22,9 @@
 #include "flvmeta.h"
 #include "dump.h"
 #include "dump_hls.h"
-#include "dump_json.h"
-#include "dump_raw.h"
-#include "dump_xml.h"
+//#include "dump_json.h"
+//#include "dump_raw.h"
+//#include "dump_xml.h"
 //#include "dump_yaml.h"
 
 #include <string.h>
@@ -145,17 +145,17 @@ int dump_metadata(const flvmeta_opts * options) {
     parser.user_data = (void*)options;
 
     switch (options->dump_format) {
-        case FLVMETA_FORMAT_JSON:
-            dump_json_setup_metadata_dump(&parser);
-            break;
-        case FLVMETA_FORMAT_RAW:
-            dump_raw_setup_metadata_dump(&parser);
-            break;
-        case FLVMETA_FORMAT_XML:
-            dump_xml_setup_metadata_dump(&parser);
-            break;
-        //case FLVMETA_FORMAT_YAML:
-        //    dump_yaml_setup_metadata_dump(&parser);
+        //case FLVMETA_FORMAT_JSON:
+        //    dump_json_setup_metadata_dump(&parser);
+        //    break;
+        //case FLVMETA_FORMAT_RAW:
+        //    dump_raw_setup_metadata_dump(&parser);
+        //    break;
+        //case FLVMETA_FORMAT_XML:
+        //    dump_xml_setup_metadata_dump(&parser);
+        //    break;
+        ////case FLVMETA_FORMAT_YAML:
+        ////    dump_yaml_setup_metadata_dump(&parser);
 
 			//////
 		case FLVMETA_FORMAT_HLS:
@@ -177,18 +177,18 @@ int dump_flv_file(const flvmeta_opts * options, flv_parser * parser) {
     //memset(&parser, 0, sizeof(flv_parser));
 
     switch (options->dump_format) {
-        case FLVMETA_FORMAT_JSON:
-            //return dump_json_file(&parser, options);
-			return dump_json_file(parser, options);
-        case FLVMETA_FORMAT_RAW:
-            //return dump_raw_file(&parser, options);
-			return dump_raw_file(parser, options);
-        case FLVMETA_FORMAT_XML:
-            //return dump_xml_file(&parser, options);
-			return dump_xml_file(parser, options);
-        //case FLVMETA_FORMAT_YAML:
-            //return dump_yaml_file(&parser, options);
-		//	return dump_yaml_file(parser, options);
+  //      case FLVMETA_FORMAT_JSON:
+  //          //return dump_json_file(&parser, options);
+		//	return dump_json_file(parser, options);
+  //      case FLVMETA_FORMAT_RAW:
+  //          //return dump_raw_file(&parser, options);
+		//	return dump_raw_file(parser, options);
+  //      case FLVMETA_FORMAT_XML:
+  //          //return dump_xml_file(&parser, options);
+		//	return dump_xml_file(parser, options);
+  //      //case FLVMETA_FORMAT_YAML:
+  //          //return dump_yaml_file(&parser, options);
+		////	return dump_yaml_file(parser, options);
 			////
 		case FLVMETA_FORMAT_HLS:
 			//return dump_hls_file_ex(&parser, options);
@@ -226,12 +226,12 @@ int fragment_flv_file(const flvmeta_opts * options, flv_parser * parser) {
 /* dump AMF data directly */
 int dump_amf_data(const amf_data * data, const flvmeta_opts * options) {
     switch (options->dump_format) {
-        case FLVMETA_FORMAT_JSON:
-            return dump_json_amf_data(data);
-        case FLVMETA_FORMAT_RAW:
-            return dump_raw_amf_data(data);
-        case FLVMETA_FORMAT_XML:
-            return dump_xml_amf_data(data);
+        //case FLVMETA_FORMAT_JSON:
+        //    return dump_json_amf_data(data);
+        //case FLVMETA_FORMAT_RAW:
+        //    return dump_raw_amf_data(data);
+        //case FLVMETA_FORMAT_XML:
+        //    return dump_xml_amf_data(data);
        // case FLVMETA_FORMAT_YAML:
         //    return dump_yaml_amf_data(data);
         default:

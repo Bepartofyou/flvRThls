@@ -4,32 +4,16 @@ set(flvmeta_src
   amf.h
   avc.cpp
   avc.h
-  check.cpp
-  check.h
   dump.cpp
   dump.h
   dump_hls.cpp
   dump_hls.h
-  dump_json.cpp
-  dump_json.h
-  dump_raw.cpp
-  dump_raw.h
-  dump_xml.cpp
-  dump_xml.h
   flv.cpp
   flv.h
   flvmeta.cpp
   flvmeta.h
-  info.cpp
-  info.h
-  json.cpp
-  json.h
   types.cpp
   types.h
-  update.cpp
-  update.h
-  util.cpp
-  util.h
   ngx_rtmp_hls_module.cpp
   ngx_rtmp_hls_module.h
   ngx_rtmp_mpegts.cpp
