@@ -1,18 +1,5 @@
 #include "ngx_rtmp_mpegts.h"
 
-#if 0 
-
-CMpegTS::CMpegTS()
-{
-}
-
-CMpegTS::~CMpegTS()
-{
-}
-
-
-#else
-
 static u_char ngx_rtmp_mpegts_header[] = {
 
     /* TS */
@@ -393,4 +380,3 @@ ngx_rtmp_mpegts_close_file(ngx_rtmp_mpegts_file_t *file)
 
     return NGX_OK;
 }
-#endif
