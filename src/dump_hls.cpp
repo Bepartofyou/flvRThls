@@ -116,8 +116,8 @@ static int hls_segment(flv_parser * parser) {
 
 	if (parser->stream->hlsconfig.hls_file == NULL){
 		//bepartofyou
-//		parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
-//		parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0);
+		parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
+		parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0);
 
 		//int index = parser->stream->flvname.rfind(".flv");
 		std::string hlsname = get_flv_key(std::string(parser->stream->flvname)) + ".m3u8";
@@ -134,8 +134,8 @@ static int hls_segment(flv_parser * parser) {
 		parser->hls_content.push_back("#EXT-X-MEDIA-SEQUENCE:0\n");
 	}else
 	{
-//		parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
-//		parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0);
+		parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
+		parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0);
 
 		uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
 		parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
