@@ -95,6 +95,9 @@ typedef struct __flvmeta_opts {
     int dump_format;
     int verbose;
     char * metadata_event;
+
+	int keyframe_start_index;
+	int keyframe_end_index;
 } flvmeta_opts;
 
 #endif /* __FLVMETA_H__ */

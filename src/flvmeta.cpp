@@ -25,28 +25,36 @@ int main(int argc, char ** argv) {
 
 	/* flvmeta default options */
 	static flvmeta_opts options;
-	options.command = FLVMETA_FULL_DUMP_COMMAND;
-	//options.command = FLVMETA_DUMP_COMMAND;
-	options.input_file = info.flvfile_arg;
-	//options.input_file = argv[1];
+
 	options.output_file = NULL;
 	options.metadata = NULL;
 	options.check_level = FLVMETA_CHECK_LEVEL_WARNING;
 	options.quiet = 0;
 	options.check_report_format = FLVMETA_FORMAT_RAW;
+	options.error_handling = FLVMETA_EXIT_ON_ERROR;
+	options.verbose = 0;
+	options.metadata_event = NULL;
 	options.dump_metadata = 0;
 	options.insert_onlastsecond = 1;
 	options.reset_timestamps = 0;
 	options.all_keyframes = 0;
 	options.preserve_metadata = 0;
-	options.error_handling = FLVMETA_EXIT_ON_ERROR;
+
+
+	options.command = FLVMETA_FULL_DUMP_COMMAND;
+	//options.command = FLVMETA_DUMP_COMMAND;
+	options.input_file = info.flvfile_arg;
+	//options.input_file = argv[1];
 	options.dump_format = FLVMETA_FORMAT_HLS;
-	options.verbose = 0;
-	options.metadata_event = NULL;
+	options.keyframe_start_index = info.key_ID_start_arg;
+	options.keyframe_end_index = info.key_ID_end_arg;
+
 
 	flv_parser parser;
 	memset(&parser, 0, sizeof(flv_parser));
 	parser.hlsmodule = CHlsModule::getInstance();
+	parser.b_m3u8 = info.m3u8_flag;
+	parser.b_ts = info.ts_flag;
 
 	switch (options.command) 
 	{

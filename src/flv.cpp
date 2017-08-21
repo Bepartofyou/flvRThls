@@ -705,7 +705,7 @@ int flv_parse_av_config(const char * file, flv_parser * parser, file_offset_t of
 }
 
 /* FLV get AAC and H264 */
-int flv_get_raw_av(flv_parser * parser, file_offset_t offset) {
+int flv_get_raw_av(flv_parser * parser, file_offset_t offset_s, file_offset_t offset_e) {
 	flv_header header;
 	flv_tag tag;
 	flv_audio_tag at;
@@ -723,7 +723,7 @@ int flv_get_raw_av(flv_parser * parser, file_offset_t offset) {
 	}
 
 	//set flv keyframe offset
-	flv_set_offset(parser->stream, offset);
+	flv_set_offset(parser->stream, offset_s);
 	//if setting keyframe offset, no need to read header,just read AV tags
 	if (flv_get_offset(parser->stream) == 0)
 	{
@@ -790,6 +790,9 @@ int flv_get_raw_av(flv_parser * parser, file_offset_t offset) {
 			flv_close(parser->stream);
 			return retval;
 		}
+
+		if (offset_e >= lfs_ftell(parser->stream->flvin))
+			break;
 	}
 
 	//fwrite hls end list

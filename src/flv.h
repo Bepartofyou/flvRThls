@@ -261,6 +261,8 @@ typedef struct __flv_parser {
     flv_stream * stream;
 	CHlsModule* hlsmodule;
 	std::vector<std::string> hls_content;
+	int b_ts;
+	int b_m3u8;
 
     void * user_data;
     int (* on_header)(flv_header * header, struct __flv_parser * parser);
@@ -275,7 +277,7 @@ typedef struct __flv_parser {
 
 int flv_parse(const char * file, flv_parser * parser, file_offset_t offset);
 int flv_parse_av_config(const char * file, flv_parser * parser, file_offset_t offset);
-int flv_get_raw_av(flv_parser * parser, file_offset_t offset);
+int flv_get_raw_av(flv_parser * parser, file_offset_t offset_s, file_offset_t offset_e);
 
 #ifdef __cplusplus
 }
