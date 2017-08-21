@@ -42,9 +42,12 @@ struct gengetopt_args_info
   char * flvfile_arg;	/**< @brief the input flv file.  */
   char * flvfile_orig;	/**< @brief the input flv file original value given at command line.  */
   const char *flvfile_help; /**< @brief the input flv file help description.  */
-  int keyframe_ID_arg;	/**< @brief flv keyframe index number (default='0').  */
-  char * keyframe_ID_orig;	/**< @brief flv keyframe index number original value given at command line.  */
-  const char *keyframe_ID_help; /**< @brief flv keyframe index number help description.  */
+  int key_ID_start_arg;	/**< @brief flv keyframe start index number, '0' means min index (default='0').  */
+  char * key_ID_start_orig;	/**< @brief flv keyframe start index number, '0' means min index original value given at command line.  */
+  const char *key_ID_start_help; /**< @brief flv keyframe start index number, '0' means min index help description.  */
+  int key_ID_end_arg;	/**< @brief flv keyframe end index number, '-1' means max index (default='-1').  */
+  char * key_ID_end_orig;	/**< @brief flv keyframe end index number, '-1' means max index original value given at command line.  */
+  const char *key_ID_end_help; /**< @brief flv keyframe end index number, '-1' means max index help description.  */
   int m3u8_flag;	/**< @brief generate m3u8 file Flag with default 'on' (default=on).  */
   const char *m3u8_help; /**< @brief generate m3u8 file Flag with default 'on' help description.  */
   int ts_flag;	/**< @brief generate ts files Flag with default 'off' (default=off).  */
@@ -53,7 +56,8 @@ struct gengetopt_args_info
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int flvfile_given ;	/**< @brief Whether flvfile was given.  */
-  unsigned int keyframe_ID_given ;	/**< @brief Whether keyframe-ID was given.  */
+  unsigned int key_ID_start_given ;	/**< @brief Whether key_ID_start was given.  */
+  unsigned int key_ID_end_given ;	/**< @brief Whether key_ID_end was given.  */
   unsigned int m3u8_given ;	/**< @brief Whether m3u8 was given.  */
   unsigned int ts_given ;	/**< @brief Whether ts was given.  */
 

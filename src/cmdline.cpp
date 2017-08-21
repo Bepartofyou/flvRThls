@@ -31,12 +31,13 @@ const char *gengetopt_args_info_usage = "Usage: flvRThls [OPTIONS]...";
 const char *gengetopt_args_info_description = "";
 
 const char *gengetopt_args_info_help[] = {
-  "  -h, --help             Print help and exit",
-  "  -V, --version          Print version and exit",
-  "  -f, --flvfile=STRING   the input flv file",
-  "  -k, --keyframe-ID=INT  flv keyframe index number  (default=`0')",
-  "  -m, --m3u8             generate m3u8 file Flag with default 'on'  \n                           (default=on)",
-  "  -t, --ts               generate ts files Flag with default 'off'  \n                           (default=off)",
+  "  -h, --help              Print help and exit",
+  "  -V, --version           Print version and exit",
+  "  -f, --flvfile=STRING    the input flv file",
+  "  -s, --key_ID_start=INT  flv keyframe start index number, '0' means min index  \n                            (default=`0')",
+  "  -e, --key_ID_end=INT    flv keyframe end index number, '-1' means max index  \n                            (default=`-1')",
+  "  -m, --m3u8              generate m3u8 file Flag with default 'on'  \n                            (default=on)",
+  "  -t, --ts                generate ts files Flag with default 'off'  \n                            (default=off)",
     0
 };
 
@@ -67,7 +68,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->flvfile_given = 0 ;
-  args_info->keyframe_ID_given = 0 ;
+  args_info->key_ID_start_given = 0 ;
+  args_info->key_ID_end_given = 0 ;
   args_info->m3u8_given = 0 ;
   args_info->ts_given = 0 ;
 }
@@ -78,8 +80,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->flvfile_arg = NULL;
   args_info->flvfile_orig = NULL;
-  args_info->keyframe_ID_arg = 0;
-  args_info->keyframe_ID_orig = NULL;
+  args_info->key_ID_start_arg = 0;
+  args_info->key_ID_start_orig = NULL;
+  args_info->key_ID_end_arg = -1;
+  args_info->key_ID_end_orig = NULL;
   args_info->m3u8_flag = 1;
   args_info->ts_flag = 0;
   
@@ -93,9 +97,10 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->help_help = gengetopt_args_info_help[0] ;
   args_info->version_help = gengetopt_args_info_help[1] ;
   args_info->flvfile_help = gengetopt_args_info_help[2] ;
-  args_info->keyframe_ID_help = gengetopt_args_info_help[3] ;
-  args_info->m3u8_help = gengetopt_args_info_help[4] ;
-  args_info->ts_help = gengetopt_args_info_help[5] ;
+  args_info->key_ID_start_help = gengetopt_args_info_help[3] ;
+  args_info->key_ID_end_help = gengetopt_args_info_help[4] ;
+  args_info->m3u8_help = gengetopt_args_info_help[5] ;
+  args_info->ts_help = gengetopt_args_info_help[6] ;
   
 }
 
@@ -178,7 +183,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
 
   free_string_field (&(args_info->flvfile_arg));
   free_string_field (&(args_info->flvfile_orig));
-  free_string_field (&(args_info->keyframe_ID_orig));
+  free_string_field (&(args_info->key_ID_start_orig));
+  free_string_field (&(args_info->key_ID_end_orig));
   
   
 
@@ -215,8 +221,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->flvfile_given)
     write_into_file(outfile, "flvfile", args_info->flvfile_orig, 0);
-  if (args_info->keyframe_ID_given)
-    write_into_file(outfile, "keyframe-ID", args_info->keyframe_ID_orig, 0);
+  if (args_info->key_ID_start_given)
+    write_into_file(outfile, "key_ID_start", args_info->key_ID_start_orig, 0);
+  if (args_info->key_ID_end_given)
+    write_into_file(outfile, "key_ID_end", args_info->key_ID_end_orig, 0);
   if (args_info->m3u8_given)
     write_into_file(outfile, "m3u8", 0, 0 );
   if (args_info->ts_given)
@@ -1103,7 +1111,8 @@ cmdline_parser_internal (
         { "help",	0, NULL, 'h' },
         { "version",	0, NULL, 'V' },
         { "flvfile",	1, NULL, 'f' },
-        { "keyframe-ID",	1, NULL, 'k' },
+        { "key_ID_start",	1, NULL, 's' },
+        { "key_ID_end",	1, NULL, 'e' },
         { "m3u8",	0, NULL, 'm' },
         { "ts",	0, NULL, 't' },
         { 0,  0, 0, 0 }
@@ -1114,7 +1123,7 @@ cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "hVf:k:mt", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "hVf:s:e:mt", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1147,14 +1156,26 @@ cmdline_parser_internal (
             goto failure;
         
           break;
-        case 'k':	/* flv keyframe index number.  */
+        case 's':	/* flv keyframe start index number, '0' means min index.  */
         
         
-          if (update_arg( (void *)&(args_info->keyframe_ID_arg), 
-               &(args_info->keyframe_ID_orig), &(args_info->keyframe_ID_given),
-              &(local_args_info.keyframe_ID_given), optarg, 0, "0", ARG_INT,
+          if (update_arg( (void *)&(args_info->key_ID_start_arg), 
+               &(args_info->key_ID_start_orig), &(args_info->key_ID_start_given),
+              &(local_args_info.key_ID_start_given), optarg, 0, "0", ARG_INT,
               check_ambiguity, override, 0, 0,
-              "keyframe-ID", 'k',
+              "key_ID_start", 's',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'e':	/* flv keyframe end index number, '-1' means max index.  */
+        
+        
+          if (update_arg( (void *)&(args_info->key_ID_end_arg), 
+               &(args_info->key_ID_end_orig), &(args_info->key_ID_end_given),
+              &(local_args_info.key_ID_end_given), optarg, 0, "-1", ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "key_ID_end", 'e',
               additional_error))
             goto failure;
         
