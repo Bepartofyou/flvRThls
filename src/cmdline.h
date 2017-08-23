@@ -42,6 +42,9 @@ struct gengetopt_args_info
   char * flvfile_arg;	/**< @brief the input flv file.  */
   char * flvfile_orig;	/**< @brief the input flv file original value given at command line.  */
   const char *flvfile_help; /**< @brief the input flv file help description.  */
+  char * outpath_arg;	/**< @brief the output ts file path (default=''./'').  */
+  char * outpath_orig;	/**< @brief the output ts file path original value given at command line.  */
+  const char *outpath_help; /**< @brief the output ts file path help description.  */
   int key_ID_start_arg;	/**< @brief flv keyframe start index number, '0' means min index (default='0').  */
   char * key_ID_start_orig;	/**< @brief flv keyframe start index number, '0' means min index original value given at command line.  */
   const char *key_ID_start_help; /**< @brief flv keyframe start index number, '0' means min index help description.  */
@@ -56,6 +59,7 @@ struct gengetopt_args_info
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int flvfile_given ;	/**< @brief Whether flvfile was given.  */
+  unsigned int outpath_given ;	/**< @brief Whether outpath was given.  */
   unsigned int key_ID_start_given ;	/**< @brief Whether key_ID_start was given.  */
   unsigned int key_ID_end_given ;	/**< @brief Whether key_ID_end was given.  */
   unsigned int m3u8_given ;	/**< @brief Whether m3u8 was given.  */

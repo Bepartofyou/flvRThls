@@ -34,6 +34,7 @@ const char *gengetopt_args_info_help[] = {
   "  -h, --help              Print help and exit",
   "  -V, --version           Print version and exit",
   "  -f, --flvfile=STRING    the input flv file",
+  "  -o, --outpath=STRING    the output ts file path  (default=`'./'')",
   "  -s, --key_ID_start=INT  flv keyframe start index number, '0' means min index  \n                            (default=`0')",
   "  -e, --key_ID_end=INT    flv keyframe end index number, '-1' means max index  \n                            (default=`-1')",
   "  -m, --m3u8              generate m3u8 file Flag with default 'on'  \n                            (default=on)",
@@ -68,6 +69,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->flvfile_given = 0 ;
+  args_info->outpath_given = 0 ;
   args_info->key_ID_start_given = 0 ;
   args_info->key_ID_end_given = 0 ;
   args_info->m3u8_given = 0 ;
@@ -80,6 +82,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->flvfile_arg = NULL;
   args_info->flvfile_orig = NULL;
+  args_info->outpath_arg = gengetopt_strdup ("'./'");
+  args_info->outpath_orig = NULL;
   args_info->key_ID_start_arg = 0;
   args_info->key_ID_start_orig = NULL;
   args_info->key_ID_end_arg = -1;
@@ -97,10 +101,11 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->help_help = gengetopt_args_info_help[0] ;
   args_info->version_help = gengetopt_args_info_help[1] ;
   args_info->flvfile_help = gengetopt_args_info_help[2] ;
-  args_info->key_ID_start_help = gengetopt_args_info_help[3] ;
-  args_info->key_ID_end_help = gengetopt_args_info_help[4] ;
-  args_info->m3u8_help = gengetopt_args_info_help[5] ;
-  args_info->ts_help = gengetopt_args_info_help[6] ;
+  args_info->outpath_help = gengetopt_args_info_help[3] ;
+  args_info->key_ID_start_help = gengetopt_args_info_help[4] ;
+  args_info->key_ID_end_help = gengetopt_args_info_help[5] ;
+  args_info->m3u8_help = gengetopt_args_info_help[6] ;
+  args_info->ts_help = gengetopt_args_info_help[7] ;
   
 }
 
@@ -183,6 +188,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
 
   free_string_field (&(args_info->flvfile_arg));
   free_string_field (&(args_info->flvfile_orig));
+  free_string_field (&(args_info->outpath_arg));
+  free_string_field (&(args_info->outpath_orig));
   free_string_field (&(args_info->key_ID_start_orig));
   free_string_field (&(args_info->key_ID_end_orig));
   
@@ -221,6 +228,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->flvfile_given)
     write_into_file(outfile, "flvfile", args_info->flvfile_orig, 0);
+  if (args_info->outpath_given)
+    write_into_file(outfile, "outpath", args_info->outpath_orig, 0);
   if (args_info->key_ID_start_given)
     write_into_file(outfile, "key_ID_start", args_info->key_ID_start_orig, 0);
   if (args_info->key_ID_end_given)
@@ -1111,6 +1120,7 @@ cmdline_parser_internal (
         { "help",	0, NULL, 'h' },
         { "version",	0, NULL, 'V' },
         { "flvfile",	1, NULL, 'f' },
+        { "outpath",	1, NULL, 'o' },
         { "key_ID_start",	1, NULL, 's' },
         { "key_ID_end",	1, NULL, 'e' },
         { "m3u8",	0, NULL, 'm' },
@@ -1123,7 +1133,7 @@ cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "hVf:s:e:mt", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "hVf:o:s:e:mt", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1152,6 +1162,18 @@ cmdline_parser_internal (
               &(local_args_info.flvfile_given), optarg, 0, 0, ARG_STRING,
               check_ambiguity, override, 0, 0,
               "flvfile", 'f',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'o':	/* the output ts file path.  */
+        
+        
+          if (update_arg( (void *)&(args_info->outpath_arg), 
+               &(args_info->outpath_orig), &(args_info->outpath_given),
+              &(local_args_info.outpath_given), optarg, 0, "'./'", ARG_STRING,
+              check_ambiguity, override, 0, 0,
+              "outpath", 'o',
               additional_error))
             goto failure;
         
