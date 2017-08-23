@@ -221,7 +221,8 @@ typedef struct __flv_stream {
 	uint32_t h264_buf_max;
 	int h264_header_count;
 
-	char flvname[300];
+	char flvname[500];
+	char outpath[500];
 	//std::string flvname;
     FILE * flvin;
     uint8 state;
@@ -278,7 +279,7 @@ typedef struct __flv_parser {
 } flv_parser;
 
 int flv_parse(const char * file, flv_parser * parser, file_offset_t offset);
-int flv_parse_av_config(const char * file, flv_parser * parser, file_offset_t offset);
+int flv_parse_av_config(const char * file, const char * outpath, flv_parser * parser, file_offset_t offset);
 int flv_get_raw_av(flv_parser * parser, file_offset_t offset_s, file_offset_t offset_e);
 
 #ifdef __cplusplus
