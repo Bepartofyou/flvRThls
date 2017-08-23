@@ -6,7 +6,7 @@ By Bepartofyou <309554135@qq.com>"
 
 # Options
 option "flvfile" f "the input flv file" string required
-option "outpath" o "the output ts file path" optional string default="'./'"
+option "outpath" o "the output ts file path" optional string default="./"
 option "key_ID_start" s "flv keyframe start index number, '0' means min index" optional int default="0"
 option "key_ID_end" e "flv keyframe end index number, '-1' means max index" optional int default="-1"
 option "m3u8" m "generate m3u8 file Flag with default 'on'"  flag on

@@ -42,7 +42,7 @@ struct gengetopt_args_info
   char * flvfile_arg;	/**< @brief the input flv file.  */
   char * flvfile_orig;	/**< @brief the input flv file original value given at command line.  */
   const char *flvfile_help; /**< @brief the input flv file help description.  */
-  char * outpath_arg;	/**< @brief the output ts file path (default=''./'').  */
+  char * outpath_arg;	/**< @brief the output ts file path (default='./').  */
   char * outpath_orig;	/**< @brief the output ts file path original value given at command line.  */
   const char *outpath_help; /**< @brief the output ts file path help description.  */
   int key_ID_start_arg;	/**< @brief flv keyframe start index number, '0' means min index (default='0').  */

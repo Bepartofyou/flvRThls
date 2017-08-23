@@ -34,7 +34,7 @@ const char *gengetopt_args_info_help[] = {
   "  -h, --help              Print help and exit",
   "  -V, --version           Print version and exit",
   "  -f, --flvfile=STRING    the input flv file",
-  "  -o, --outpath=STRING    the output ts file path  (default=`'./'')",
+  "  -o, --outpath=STRING    the output ts file path  (default=`./')",
   "  -s, --key_ID_start=INT  flv keyframe start index number, '0' means min index  \n                            (default=`0')",
   "  -e, --key_ID_end=INT    flv keyframe end index number, '-1' means max index  \n                            (default=`-1')",
   "  -m, --m3u8              generate m3u8 file Flag with default 'on'  \n                            (default=on)",
@@ -82,7 +82,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->flvfile_arg = NULL;
   args_info->flvfile_orig = NULL;
-  args_info->outpath_arg = gengetopt_strdup ("'./'");
+  args_info->outpath_arg = gengetopt_strdup ("./");
   args_info->outpath_orig = NULL;
   args_info->key_ID_start_arg = 0;
   args_info->key_ID_start_orig = NULL;
@@ -1171,7 +1171,7 @@ cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->outpath_arg), 
                &(args_info->outpath_orig), &(args_info->outpath_given),
-              &(local_args_info.outpath_given), optarg, 0, "'./'", ARG_STRING,
+              &(local_args_info.outpath_given), optarg, 0, "./", ARG_STRING,
               check_ambiguity, override, 0, 0,
               "outpath", 'o',
               additional_error))
