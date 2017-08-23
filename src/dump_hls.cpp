@@ -97,7 +97,16 @@ static int hls_on_tag_ex(flv_tag * tag, flv_parser * parser) {
 
 static std::string get_flv_key(std::string name) {
 
+#ifdef WIN32
 	return name.substr(0, name.rfind(".flv"));
+#else
+	std::string tmp1 = name.substr(0, name.rfind(".flv"));
+
+	int index = tmp1.rfind("\/");
+//	std::string tmp2 = tmp1.substr(index + 1, tmp1.length() - index);
+
+	return tmp1.substr(index + 1, tmp1.length() - index);
+#endif
 }
 
 static std::string get_ts_name(flv_parser * parser){
