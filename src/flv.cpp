@@ -791,13 +791,14 @@ int flv_get_raw_av(flv_parser * parser, file_offset_t offset_s, file_offset_t of
 			return retval;
 		}
 
-		if (offset_e >= lfs_ftell(parser->stream->flvin))
+		int length = lfs_ftell(parser->stream->flvin);
+		if (offset_e <= lfs_ftell(parser->stream->flvin))
 			break;
 	}
 
 	//fwrite hls end list
 	if (parser->on_metadata_tag != NULL) {
-		retval = parser->on_metadata_tag(&tag, name, data, parser);
+		retval = parser->on_metadata_tag(NULL, NULL, NULL, parser);
 		if (retval != FLV_OK) {
 			flv_close(parser->stream);
 			return retval;

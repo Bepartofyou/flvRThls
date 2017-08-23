@@ -55,6 +55,8 @@ int main(int argc, char ** argv) {
 	parser.hlsmodule = CHlsModule::getInstance();
 	parser.b_m3u8 = info.m3u8_flag;
 	parser.b_ts = info.ts_flag;
+	parser.key_ID_start = info.key_ID_start_arg;
+	parser.key_ID_end = info.key_ID_end_arg;
 
 	switch (options.command) 
 	{

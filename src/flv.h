@@ -263,6 +263,8 @@ typedef struct __flv_parser {
 	std::vector<std::string> hls_content;
 	int b_ts;
 	int b_m3u8;
+	int key_ID_start;
+	int key_ID_end;
 
     void * user_data;
     int (* on_header)(flv_header * header, struct __flv_parser * parser);

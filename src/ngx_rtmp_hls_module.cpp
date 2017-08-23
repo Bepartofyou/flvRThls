@@ -808,6 +808,27 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_close_fragment_ex()
 	return NGX_OK;
 }
 
+ngx_int_t CHlsModule::ngx_rtmp_hls_close_fragment_ex2()
+{
+	if (!this->ctx.opened) {
+		return NGX_OK;
+	}
+
+	ngx_rtmp_hls_flush_audio_ex();
+
+	printf("hls: close fragment n=%uL  \n", this->ctx.frag);
+
+	ngx_rtmp_mpegts_close_file(&this->ctx.file);
+
+	this->ctx.opened = 0;
+
+	//ngx_rtmp_hls_next_frag(&this->ctx, &this->hacf);
+
+	//ngx_rtmp_hls_write_playlist(&this->ctx, &this->hacf);
+
+	return NGX_OK;
+}
+
 ngx_int_t CHlsModule::ngx_rtmp_hls_flush_audio_ex()
 {
 	ngx_rtmp_mpegts_frame_t         frame;

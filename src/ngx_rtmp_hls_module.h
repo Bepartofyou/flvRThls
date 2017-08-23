@@ -362,6 +362,7 @@ public:
 	///////
 	ngx_int_t ngx_rtmp_hls_open_fragment_ex(const char* ts_file, uint64_t ts, ngx_int_t discont);
 	ngx_int_t ngx_rtmp_hls_close_fragment_ex();
+	ngx_int_t ngx_rtmp_hls_close_fragment_ex2();
 	ngx_int_t ngx_rtmp_hls_flush_audio_ex();
 	//ngx_int_t ngx_rtmp_hls_audio_ex(ngx_rtmp_header_t *h, ngx_chain_t *in);
 
