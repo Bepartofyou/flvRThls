@@ -195,7 +195,7 @@ static int hls_segment(flv_parser * parser) {
 
 			char conunt[100] = { 0 };
 			sprintf(conunt, "%.4u", parser->stream->hlsconfig.hls_count);
-			std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(parser->stream->outpath)) + "-keyframeID-" +
+			std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(".")) + "-keyframeID-" +
 				num2str(parser->stream->hlsconfig.key_frame_current > 0 ? parser->stream->hlsconfig.key_frame_current - 1 : 0) + "-" + std::string(conunt) + ".ts\n";
 
 			//fwrite(strfile.c_str(), strfile.size(), 1, parser->stream->hlsconfig.hls_file);
