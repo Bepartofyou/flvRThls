@@ -156,6 +156,21 @@ static std::string get_ts_name_ex(flv_parser * parser){
 
 static int hls_segment(flv_parser * parser) {
 
+	if (parser->key_ID_start == 0 || (parser->key_ID_start != 0 && parser->stream->hlsconfig.key_frame_count != 0))
+	{
+		//bepartofyou
+		if (parser->key_ID_end != -1 && parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->key_ID_end)
+		{
+			parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
+		}
+		else
+		{
+			parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
+			//parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
+		}
+	}
+
+
 	if (parser->b_m3u8)
 	{
 		if (parser->stream->hlsconfig.hls_file == NULL){
@@ -219,17 +234,17 @@ static int hls_segment(flv_parser * parser) {
 
 	if (parser->key_ID_start == 0 || (parser->key_ID_start != 0 && parser->stream->hlsconfig.key_frame_count != 0 ))
 	{
-		//bepartofyou
-		if (parser->key_ID_end != -1 && parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->key_ID_end)
-		{
-			parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
-		}
-		else
-		{
-			parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
-			//parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
-		}
-		
+		////bepartofyou
+		//if (parser->key_ID_end != -1 && parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->key_ID_end)
+		//{
+		//	parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
+		//}
+		//else
+		//{
+		//	parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
+		//	//parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
+		//}
+		//
 		if (((parser->key_ID_end == -1) && (parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->stream->keyframePos.size())) ||
 			((int)(parser->stream->hlsconfig.key_frame_count + parser->key_ID_start) < (int)parser->key_ID_end))
 		{
