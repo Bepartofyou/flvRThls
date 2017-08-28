@@ -185,8 +185,11 @@ static int hls_segment(flv_parser * parser) {
 				for (size_t index = 0; index < parser->hls_content.size(); index++)
 					fwrite(parser->hls_content[index].c_str(), parser->hls_content[index].size(), 1, parser->stream->hlsconfig.hls_file);
 
-				if (parser->stream->hlsconfig.hls_file)
-					fclose(parser->stream->hlsconfig.hls_file);		
+				if (parser->stream->hlsconfig.hls_file){
+					fclose(parser->stream->hlsconfig.hls_file);
+					parser->stream->hlsconfig.hls_file = NULL;
+				}
+	
 
 				std::vector<std::string>().swap(parser->hls_content);
 			}
