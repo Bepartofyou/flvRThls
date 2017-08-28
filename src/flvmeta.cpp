@@ -54,10 +54,16 @@ int main(int argc, char ** argv) {
 	flv_parser parser;
 	memset(&parser, 0, sizeof(flv_parser));
 	parser.hlsmodule = CHlsModule::getInstance();
+	parser.hlsmodule->ctx.audio_cc = info.audio_cc_arg;
+	parser.hlsmodule->ctx.video_cc = info.video_cc_arg;
+	parser.hlsmodule->ctx.aframe_base = info.aframe_base_arg;
+	parser.hlsmodule->ctx.aframe_pts = info.aframe_pts_arg;
+
 	parser.b_m3u8 = info.m3u8_flag;
 	parser.b_ts = info.ts_flag;
 	parser.key_ID_start = info.key_ID_start_arg;
 	parser.key_ID_end = info.key_ID_end_arg;
+
 
 	switch (options.command) 
 	{
