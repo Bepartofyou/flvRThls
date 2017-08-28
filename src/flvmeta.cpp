@@ -63,6 +63,7 @@ int main(int argc, char ** argv) {
 	parser.b_ts = info.ts_flag;
 	parser.key_ID_start = info.key_ID_start_arg;
 	parser.key_ID_end = info.key_ID_end_arg;
+	parser.flag_over = 0;
 
 
 	switch (options.command) 

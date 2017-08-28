@@ -266,6 +266,7 @@ typedef struct __flv_parser {
 	int b_m3u8;
 	int key_ID_start;
 	int key_ID_end;
+	int flag_over;
 
     void * user_data;
     int (* on_header)(flv_header * header, struct __flv_parser * parser);

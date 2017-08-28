@@ -152,7 +152,9 @@ static int hls_segment(flv_parser * parser) {
 			parser->hls_content.push_back("#EXT-X-TARGETDURATION:12\n");
 			parser->hls_content.push_back("#EXT-X-MEDIA-SEQUENCE:0\n");
 		}
-		else
+
+		if (((parser->key_ID_end == -1) && (parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->stream->keyframePos.size())) ||
+			((int)(parser->stream->hlsconfig.key_frame_count + parser->key_ID_start) < (int)parser->key_ID_end))
 		{
 			uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
 			parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
@@ -165,34 +167,38 @@ static int hls_segment(flv_parser * parser) {
 			std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
 			parser->hls_content.push_back(strts);
 
-			char conunt[100] = { 0 };
-			sprintf(conunt, "%.4u", parser->stream->hlsconfig.hls_count);
-			std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(".")) + "-key-" +
-				num2str(parser->stream->hlsconfig.key_frame_current > 0 ? parser->stream->hlsconfig.key_frame_current - 1 : 0) +
-				"-ac-" + num2str(parser->hlsmodule->m_last_ac) + "-vc-" + num2str(parser->hlsmodule->m_last_vc) +
-				"-base-" + num2str(parser->hlsmodule->m_last_base) + "-pts-" + num2str(parser->hlsmodule->m_last_pts) +
-				"-" + std::string(conunt) + ".ts\n";
+			//char conunt[100] = { 0 };
+			//sprintf(conunt, "%.4u", parser->stream->hlsconfig.hls_count);
+			//std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(".")) + "-key-" +
+			//	num2str(parser->stream->hlsconfig.key_frame_current > 0 ? parser->stream->hlsconfig.key_frame_current - 1 : 0) +
+			//	"-ac-" + num2str(parser->hlsmodule->m_last_ac) + "-vc-" + num2str(parser->hlsmodule->m_last_vc) +
+			//	"-base-" + num2str(parser->hlsmodule->m_last_base) + "-pts-" + num2str(parser->hlsmodule->m_last_pts) +
+			//	"-" + std::string(conunt) + ".ts\n";
 
-			parser->hls_content.push_back(strfile);
+			//parser->hls_content.push_back(strfile);
+			parser->hls_content.push_back(get_ts_name(parser) + "\n");
+			
+		}
 
-			//end
-			if (parser->stream->hlsconfig.key_frame_count == parser->stream->keyframePos.size()){
+		//end
+		//if (parser->stream->hlsconfig.key_frame_count == parser->stream->keyframePos.size())
+		if (parser->flag_over)
+		{
 
-				parser->hls_content.push_back("#EXT-X-ENDLIST");
-				std::string strts = "#EXT-X-TARGETDURATION:" + num2str(ceil((double)parser->stream->hlsconfig.hls_segment_duration / (double)1000)) + "\n";
-				parser->hls_content[2] = strts;
+			parser->hls_content.push_back("#EXT-X-ENDLIST");
+			std::string strts = "#EXT-X-TARGETDURATION:" + num2str(ceil((double)parser->stream->hlsconfig.hls_segment_duration / (double)1000)) + "\n";
+			parser->hls_content[2] = strts;
 
-				for (size_t index = 0; index < parser->hls_content.size(); index++)
-					fwrite(parser->hls_content[index].c_str(), parser->hls_content[index].size(), 1, parser->stream->hlsconfig.hls_file);
+			for (size_t index = 0; index < parser->hls_content.size(); index++)
+				fwrite(parser->hls_content[index].c_str(), parser->hls_content[index].size(), 1, parser->stream->hlsconfig.hls_file);
 
-				if (parser->stream->hlsconfig.hls_file){
-					fclose(parser->stream->hlsconfig.hls_file);
-					parser->stream->hlsconfig.hls_file = NULL;
-				}
-	
-
-				std::vector<std::string>().swap(parser->hls_content);
+			if (parser->stream->hlsconfig.hls_file){
+				fclose(parser->stream->hlsconfig.hls_file);
+				parser->stream->hlsconfig.hls_file = NULL;
 			}
+
+
+			std::vector<std::string>().swap(parser->hls_content);
 		}
 	}
 
@@ -666,6 +672,8 @@ static int hls_segment_finish(flv_tag * tag, amf_data * name, amf_data * data, f
 	(void)name;
 	(void)data;
 	//(void)parser;
+
+	parser->flag_over = 1;
 
 	hls_segment(parser);
 
