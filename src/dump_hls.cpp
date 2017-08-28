@@ -233,15 +233,15 @@ static int hls_segment(flv_parser * parser) {
 		if (((parser->key_ID_end == -1) && (parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->stream->keyframePos.size())) ||
 			((int)(parser->stream->hlsconfig.key_frame_count + parser->key_ID_start) < (int)parser->key_ID_end))
 		{
-			parser->hlsmodule->m_last_ac = parser->hlsmodule->ctx.audio_cc;
-			parser->hlsmodule->m_last_vc = parser->hlsmodule->ctx.video_cc;
-			parser->hlsmodule->m_last_base = parser->hlsmodule->ctx.aframe_base;
-			parser->hlsmodule->m_last_pts = parser->hlsmodule->ctx.aframe_pts;
-
 			if (parser->b_ts)
 				parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 0);
 			if (!parser->b_ts && parser->b_m3u8)
 				parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 1);
+
+			parser->hlsmodule->m_last_ac = parser->hlsmodule->ctx.audio_cc;
+			parser->hlsmodule->m_last_vc = parser->hlsmodule->ctx.video_cc;
+			parser->hlsmodule->m_last_base = parser->hlsmodule->ctx.aframe_base;
+			parser->hlsmodule->m_last_pts = parser->hlsmodule->ctx.aframe_pts;
 		}
 	}
 
