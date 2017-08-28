@@ -105,6 +105,8 @@ struct ngx_chain_s {
 
 typedef struct {
     FILE*       fd;
+	int         flag_m3u8;
+
     unsigned    encrypt:1;
     unsigned    size:4;
     u_char      buf[16];

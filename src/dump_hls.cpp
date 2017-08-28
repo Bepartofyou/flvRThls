@@ -35,7 +35,7 @@
 static std::string num2str(double i)
 {
 	std::stringstream ss;
-	ss << i;
+	ss << (uint32)i;
 	return ss.str();
 }
 
@@ -129,8 +129,10 @@ static std::string get_ts_name(flv_parser * parser){
 
 
 	//sprintf(conunt, "%.4u", parser->stream->hlsconfig.ts_count + parser->key_ID_start / parser->stream->hlsconfig.hls_segment_num);
-	std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(parser->stream->outpath)) + "-keyframeID-" +
-		num2str(parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start > 0 ? parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start - 1 : 0)
+	std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(parser->stream->outpath)) + "-key-" +
+		num2str(parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start > 0 ? parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start - 1 : 0) + 
+		"-ac-" + num2str(parser->hlsmodule->ctx.audio_cc) + "-vc-" + num2str(parser->hlsmodule->ctx.video_cc) +
+		"-base-" + num2str(parser->hlsmodule->ctx.aframe_base) + "-pts-" + num2str(parser->hlsmodule->ctx.aframe_pts) +
 		+ "-" + std::string(conunt) + ".ts";
 
 	//strcpy(name, strfile.c_str());
@@ -139,38 +141,11 @@ static std::string get_ts_name(flv_parser * parser){
 
 static int hls_segment(flv_parser * parser) {
 
-	if (parser->b_ts && (parser->key_ID_start == 0 || (parser->key_ID_start != 0 && parser->stream->hlsconfig.key_frame_count != 0 )))
-	{
-		//bepartofyou
-		if (parser->key_ID_end != -1 && parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->key_ID_end)
-		{
-			parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
-		}
-		else
-		{
-			parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
-			//parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
-		}
-		
-		if (((parser->key_ID_end == -1) && (parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->stream->keyframePos.size())) ||
-			((int)(parser->stream->hlsconfig.key_frame_count + parser->key_ID_start) < (int)parser->key_ID_end))
-		{
-			
-			parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0);
-		}
-	}
-
 	if (parser->b_m3u8)
 	{
 		if (parser->stream->hlsconfig.hls_file == NULL){
-			//int index = parser->stream->flvname.rfind(".flv");
 			std::string hlsname = get_flv_key(std::string(parser->stream->flvname), std::string(parser->stream->outpath)) + ".m3u8";
 			parser->stream->hlsconfig.hls_file = fopen(hlsname.c_str(), "wb");
-
-			//fwrite("#EXTM3U\n", strlen("#EXTM3U\n"), 1, parser->stream->hlsconfig.hls_file);
-			//fwrite("#EXT-X-VERSION:3\n", strlen("#EXT-X-VERSION:3\n"), 1, parser->stream->hlsconfig.hls_file);
-			//fwrite("#EXT-X-TARGETDURATION:12\n", strlen("#EXT-X-TARGETDURATION:12\n"), 1, parser->stream->hlsconfig.hls_file);
-			//fwrite("#EXT-X-MEDIA-SEQUENCE:0\n", strlen("#EXT-X-MEDIA-SEQUENCE:0\n"), 1, parser->stream->hlsconfig.hls_file);
 
 			parser->hls_content.push_back("#EXTM3U\n");
 			parser->hls_content.push_back("#EXT-X-VERSION:3\n");
@@ -187,25 +162,21 @@ static int hls_segment(flv_parser * parser) {
 
 			char ts[100] = { 0 };
 			sprintf(ts, "%.6f", (double)interval / (double)1000);
-			//std::string tmp = "#EXTINF:" + num2str((double)interval/(double)1000) + ",\n";
 			std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
-
-			//fwrite(strts.c_str(), strts.size(), 1, parser->stream->hlsconfig.hls_file);
 			parser->hls_content.push_back(strts);
 
 			char conunt[100] = { 0 };
 			sprintf(conunt, "%.4u", parser->stream->hlsconfig.hls_count);
-			std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(".")) + "-keyframeID-" +
-				num2str(parser->stream->hlsconfig.key_frame_current > 0 ? parser->stream->hlsconfig.key_frame_current - 1 : 0) + "-" + std::string(conunt) + ".ts\n";
+			std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(".")) + "-key-" +
+				num2str(parser->stream->hlsconfig.key_frame_current > 0 ? parser->stream->hlsconfig.key_frame_current - 1 : 0) +
+				"-ac-" + num2str(parser->hlsmodule->m_last_ac) + "-vc-" + num2str(parser->hlsmodule->m_last_vc) +
+				"-base-" + num2str(parser->hlsmodule->m_last_base) + "-pts-" + num2str(parser->hlsmodule->m_last_pts) +
+				"-" + std::string(conunt) + ".ts\n";
 
-			//fwrite(strfile.c_str(), strfile.size(), 1, parser->stream->hlsconfig.hls_file);
-			//fflush(parser->stream->hlsconfig.hls_file);
 			parser->hls_content.push_back(strfile);
 
 			//end
 			if (parser->stream->hlsconfig.key_frame_count == parser->stream->keyframePos.size()){
-				//fwrite("#EXT-X-ENDLIST", strlen("#EXT-X-ENDLIST"), 1, parser->stream->hlsconfig.hls_file);
-				//fclose(parser->stream->hlsconfig.hls_file);
 
 				parser->hls_content.push_back("#EXT-X-ENDLIST");
 				std::string strts = "#EXT-X-TARGETDURATION:" + num2str(ceil((double)parser->stream->hlsconfig.hls_segment_duration / (double)1000)) + "\n";
@@ -218,6 +189,34 @@ static int hls_segment(flv_parser * parser) {
 
 				std::vector<std::string>().swap(parser->hls_content);
 			}
+		}
+	}
+
+	if (parser->key_ID_start == 0 || (parser->key_ID_start != 0 && parser->stream->hlsconfig.key_frame_count != 0 ))
+	{
+		//bepartofyou
+		if (parser->key_ID_end != -1 && parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->key_ID_end)
+		{
+			parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
+		}
+		else
+		{
+			parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
+			//parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
+		}
+		
+		if (((parser->key_ID_end == -1) && (parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->stream->keyframePos.size())) ||
+			((int)(parser->stream->hlsconfig.key_frame_count + parser->key_ID_start) < (int)parser->key_ID_end))
+		{
+			parser->hlsmodule->m_last_ac = parser->hlsmodule->ctx.audio_cc;
+			parser->hlsmodule->m_last_vc = parser->hlsmodule->ctx.video_cc;
+			parser->hlsmodule->m_last_base = parser->hlsmodule->ctx.aframe_base;
+			parser->hlsmodule->m_last_pts = parser->hlsmodule->ctx.aframe_pts;
+
+			if (parser->b_ts)
+				parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 0);
+			if (!parser->b_ts && parser->b_m3u8)
+				parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 1);
 		}
 	}
 
@@ -355,8 +354,8 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 
 					int x = uint32_be_to_uint32(nalusize);
 
-					if (parser->stream->h264)
-						fwrite(statcode, 4, 1, parser->stream->h264);
+					//if (parser->stream->h264)
+					//	fwrite(statcode, 4, 1, parser->stream->h264);
 
 					memcpy(video_buffer + video_len, statcode, 4);
 					video_len += 4;
@@ -365,8 +364,8 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 						return ERROR_INVALID_TAG;
 					}
 
-					if (parser->stream->h264)
-						fwrite(parser->stream->h264_buffer, uint32_be_to_uint32(nalusize), 1, parser->stream->h264);
+					//if (parser->stream->h264)
+					//	fwrite(parser->stream->h264_buffer, uint32_be_to_uint32(nalusize), 1, parser->stream->h264);
 
 					memcpy(video_buffer + video_len, parser->stream->h264_buffer, uint32_be_to_uint32(nalusize));
 					video_len += uint32_be_to_uint32(nalusize);
@@ -391,6 +390,17 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 						parser->stream->hlsconfig.hls_count++;
 					}
 				}
+
+
+				//if (parser->stream->hlsconfig.key_frame_count - 1 >= 600 && parser->stream->hlsconfig.key_frame_count - 1 < 606)
+				//{
+				//	parser->stream->h264 = fopen("seek.h264", "ab");
+				//	if (parser->stream->h264)
+				//		fwrite(video_buffer, video_len, 1, parser->stream->h264);
+				//	fclose(parser->stream->h264);
+
+				//	parser->video_count++;
+				//}
 
 				parser->hlsmodule->ngx_rtmp_hls_video_ex(video_buffer, video_len, flv_tag_get_timestamp(*tag), flv_video_tag_frame_type(vt) == FLV_VIDEO_TAG_FRAME_TYPE_KEYFRAME);
 
@@ -619,6 +629,16 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 				//segment TS  last io timestamp
 				parser->stream->hlsconfig.hls_end_ts = flv_tag_get_timestamp(*tag);
 
+
+				//if (parser->stream->hlsconfig.key_frame_count -1 >= 600 && parser->stream->hlsconfig.key_frame_count-1 < 606)
+				//{
+				//	parser->stream->aac = fopen("seek.aac", "ab");
+				//	if (parser->stream->aac)
+				//		fwrite(audio_buffer, audio_len, 1, parser->stream->aac);
+				//	fclose(parser->stream->aac);
+
+				//	parser->audio_count++;
+				//}
 				parser->hlsmodule->ngx_rtmp_hls_audio_ex(audio_buffer, audio_len, flv_tag_get_timestamp(*tag), false);
 			}
 		}

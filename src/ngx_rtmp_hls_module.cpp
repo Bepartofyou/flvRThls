@@ -5,6 +5,10 @@ CHlsModule* CHlsModule::m_instance = NULL;
 
 CHlsModule::CHlsModule()
 {
+	m_last_ac = 0;
+	m_last_vc = 0;
+	m_last_base = 0;
+	m_last_pts = 0;
 	/* ngx_rtmp_hls_ctx_t */
 	ctx.opened = 0;
 
@@ -763,13 +767,14 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_open_fragment(ngx_rtmp_hls_ctx_t *ctx, ngx_rt
 	return NGX_OK;
 }
 
-ngx_int_t CHlsModule::ngx_rtmp_hls_open_fragment_ex(const char* ts_file, uint64_t ts, ngx_int_t discont)
+ngx_int_t CHlsModule::ngx_rtmp_hls_open_fragment_ex(const char* ts_file, uint64_t ts, ngx_int_t discont, ngx_int_t flag_m3u8)
 {
 	if (this->ctx.opened) {
 		return NGX_OK;
 	}
 
 	this->ctx.stream = ngx_string(ts_file);
+	this->ctx.file.flag_m3u8 = flag_m3u8;
 
 	printf("hls: open fragment file='%s', keyfile='%s', "
 		"frag=%uL, n=%ui, time=%uL, discont=%i  \n",

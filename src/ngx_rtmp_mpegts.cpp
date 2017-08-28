@@ -79,10 +79,14 @@ ngx_rtmp_mpegts_write_file(ngx_rtmp_mpegts_file_t *file, u_char *in,
     if (!file->encrypt) {
        // printf("mpegts: write %uz bytes, cc=%uL  \n", in_size, cc);
 
-        rc = fwrite(in, in_size, 1, file->fd);
-        if (rc < 0) {
-            return NGX_ERROR;
-        }
+		if (!file->flag_m3u8){
+
+			rc = fwrite(in, in_size, 1, file->fd);
+			if (rc < 0) {
+				return NGX_ERROR;
+			}
+		}
+
 
         return NGX_OK;
     }
@@ -125,10 +129,14 @@ ngx_rtmp_mpegts_write_file(ngx_rtmp_mpegts_file_t *file, u_char *in,
             break;
         }
 
-		rc = fwrite(buf, out - buf + n, 1, file->fd);
-        if (rc < 0) {
-            return NGX_ERROR;
-        }
+		if (!file->flag_m3u8){
+
+			rc = fwrite(buf, out - buf + n, 1, file->fd);
+			if (rc < 0) {
+				return NGX_ERROR;
+			}
+		}
+
 
         out = buf;
         out_size = sizeof(buf);
@@ -340,6 +348,10 @@ ngx_int_t
 ngx_rtmp_mpegts_open_file(ngx_rtmp_mpegts_file_t *file, u_char *path)
 {
 	printf("%s    %d\n", (const char*)path, strlen((const char*)path));
+
+	if (file->flag_m3u8)
+		return NGX_OK;
+
     file->fd = fopen((const char*)path, "wb");
 
     if (file->fd == NULL) {
@@ -370,13 +382,18 @@ ngx_rtmp_mpegts_close_file(ngx_rtmp_mpegts_file_t *file)
 
    //     AES_cbc_encrypt(file->buf, buf, 16, &file->key, file->iv, AES_ENCRYPT);
 
-		rc = fwrite(buf, 16, 1, file->fd);
-        if (rc < 0) {
-            return NGX_ERROR;
-        }
+		if (!file->flag_m3u8){
+
+			rc = fwrite(buf, 16, 1, file->fd);
+			if (rc < 0) {
+				return NGX_ERROR;
+			}
+		}
+
     }
 
-    fclose(file->fd);
+	if (!file->flag_m3u8)
+		fclose(file->fd);
 
     return NGX_OK;
 }

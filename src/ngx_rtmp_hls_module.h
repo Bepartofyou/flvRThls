@@ -312,6 +312,11 @@ private:
 	static CHlsModule* m_instance;
 
 public:
+	ngx_uint_t							m_last_ac;
+	ngx_uint_t                          m_last_vc;
+	uint64_t                            m_last_base;
+	uint64_t                            m_last_pts;
+public:
 	ngx_rtmp_hls_ctx_t       ctx;
 	ngx_rtmp_codec_ctx_t     codec_ctx;
 	ngx_rtmp_hls_app_conf_t  hacf;
@@ -360,7 +365,7 @@ public:
 		ngx_chain_t *in);
 
 	///////
-	ngx_int_t ngx_rtmp_hls_open_fragment_ex(const char* ts_file, uint64_t ts, ngx_int_t discont);
+	ngx_int_t ngx_rtmp_hls_open_fragment_ex(const char* ts_file, uint64_t ts, ngx_int_t discont, ngx_int_t flag_m3u8);
 	ngx_int_t ngx_rtmp_hls_close_fragment_ex();
 	ngx_int_t ngx_rtmp_hls_close_fragment_ex2();
 	ngx_int_t ngx_rtmp_hls_flush_audio_ex();

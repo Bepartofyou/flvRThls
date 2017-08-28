@@ -276,6 +276,9 @@ typedef struct __flv_parser {
     int (* on_unknown_tag)(flv_tag * tag, struct __flv_parser * parser);
     int (* on_prev_tag_size)(uint32 size, struct __flv_parser * parser);
     int (* on_stream_end)(struct __flv_parser * parser);
+
+	int video_count;
+	int audio_count;
 } flv_parser;
 
 int flv_parse(const char * file, flv_parser * parser, file_offset_t offset);
