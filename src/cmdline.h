@@ -55,16 +55,16 @@ struct gengetopt_args_info
   const char *m3u8_help; /**< @brief generate m3u8 file Flag with default 'off' help description.  */
   int ts_flag;	/**< @brief generate ts files Flag with default 'off' (default=off).  */
   const char *ts_help; /**< @brief generate ts files Flag with default 'off' help description.  */
-  int audio_cc_arg;	/**< @brief TS audio slices count.  */
+  int audio_cc_arg;	/**< @brief TS audio slices count (default='0').  */
   char * audio_cc_orig;	/**< @brief TS audio slices count original value given at command line.  */
   const char *audio_cc_help; /**< @brief TS audio slices count help description.  */
-  int video_cc_arg;	/**< @brief TS video slices count.  */
+  int video_cc_arg;	/**< @brief TS video slices count (default='0').  */
   char * video_cc_orig;	/**< @brief TS video slices count original value given at command line.  */
   const char *video_cc_help; /**< @brief TS video slices count help description.  */
-  int aframe_base_arg;	/**< @brief audio frame base time.  */
+  int aframe_base_arg;	/**< @brief audio frame base time (default='0').  */
   char * aframe_base_orig;	/**< @brief audio frame base time original value given at command line.  */
   const char *aframe_base_help; /**< @brief audio frame base time help description.  */
-  int aframe_pts_arg;	/**< @brief audio frame pts.  */
+  int aframe_pts_arg;	/**< @brief audio frame pts (default='0').  */
   char * aframe_pts_orig;	/**< @brief audio frame pts original value given at command line.  */
   const char *aframe_pts_help; /**< @brief audio frame pts help description.  */
   

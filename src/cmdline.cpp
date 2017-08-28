@@ -39,10 +39,10 @@ const char *gengetopt_args_info_help[] = {
   "  -e, --key_ID_end=INT    flv keyframe end index number, '-1' means max index  \n                            (default=`-1')",
   "  -m, --m3u8              generate m3u8 file Flag with default 'off'  \n                            (default=off)",
   "  -t, --ts                generate ts files Flag with default 'off'  \n                            (default=off)",
-  "  -a, --audio_cc=INT      TS audio slices count",
-  "  -v, --video_cc=INT      TS video slices count",
-  "  -b, --aframe_base=INT   audio frame base time",
-  "  -p, --aframe_pts=INT    audio frame pts",
+  "  -a, --audio_cc=INT      TS audio slices count  (default=`0')",
+  "  -v, --video_cc=INT      TS video slices count  (default=`0')",
+  "  -b, --aframe_base=INT   audio frame base time  (default=`0')",
+  "  -p, --aframe_pts=INT    audio frame pts  (default=`0')",
     0
 };
 
@@ -98,9 +98,13 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->key_ID_end_orig = NULL;
   args_info->m3u8_flag = 0;
   args_info->ts_flag = 0;
+  args_info->audio_cc_arg = 0;
   args_info->audio_cc_orig = NULL;
+  args_info->video_cc_arg = 0;
   args_info->video_cc_orig = NULL;
+  args_info->aframe_base_arg = 0;
   args_info->aframe_base_orig = NULL;
+  args_info->aframe_pts_arg = 0;
   args_info->aframe_pts_orig = NULL;
   
 }
@@ -385,30 +389,6 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
   if (! args_info->flvfile_given)
     {
       fprintf (stderr, "%s: '--flvfile' ('-f') option required%s\n", prog_name, (additional_error ? additional_error : ""));
-      error = 1;
-    }
-  
-  if (! args_info->audio_cc_given)
-    {
-      fprintf (stderr, "%s: '--audio_cc' ('-a') option required%s\n", prog_name, (additional_error ? additional_error : ""));
-      error = 1;
-    }
-  
-  if (! args_info->video_cc_given)
-    {
-      fprintf (stderr, "%s: '--video_cc' ('-v') option required%s\n", prog_name, (additional_error ? additional_error : ""));
-      error = 1;
-    }
-  
-  if (! args_info->aframe_base_given)
-    {
-      fprintf (stderr, "%s: '--aframe_base' ('-b') option required%s\n", prog_name, (additional_error ? additional_error : ""));
-      error = 1;
-    }
-  
-  if (! args_info->aframe_pts_given)
-    {
-      fprintf (stderr, "%s: '--aframe_pts' ('-p') option required%s\n", prog_name, (additional_error ? additional_error : ""));
       error = 1;
     }
   
@@ -1283,7 +1263,7 @@ cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->audio_cc_arg), 
                &(args_info->audio_cc_orig), &(args_info->audio_cc_given),
-              &(local_args_info.audio_cc_given), optarg, 0, 0, ARG_INT,
+              &(local_args_info.audio_cc_given), optarg, 0, "0", ARG_INT,
               check_ambiguity, override, 0, 0,
               "audio_cc", 'a',
               additional_error))
@@ -1295,7 +1275,7 @@ cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->video_cc_arg), 
                &(args_info->video_cc_orig), &(args_info->video_cc_given),
-              &(local_args_info.video_cc_given), optarg, 0, 0, ARG_INT,
+              &(local_args_info.video_cc_given), optarg, 0, "0", ARG_INT,
               check_ambiguity, override, 0, 0,
               "video_cc", 'v',
               additional_error))
@@ -1307,7 +1287,7 @@ cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->aframe_base_arg), 
                &(args_info->aframe_base_orig), &(args_info->aframe_base_given),
-              &(local_args_info.aframe_base_given), optarg, 0, 0, ARG_INT,
+              &(local_args_info.aframe_base_given), optarg, 0, "0", ARG_INT,
               check_ambiguity, override, 0, 0,
               "aframe_base", 'b',
               additional_error))
@@ -1319,7 +1299,7 @@ cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->aframe_pts_arg), 
                &(args_info->aframe_pts_orig), &(args_info->aframe_pts_given),
-              &(local_args_info.aframe_pts_given), optarg, 0, 0, ARG_INT,
+              &(local_args_info.aframe_pts_given), optarg, 0, "0", ARG_INT,
               check_ambiguity, override, 0, 0,
               "aframe_pts", 'p',
               additional_error))
