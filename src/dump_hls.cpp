@@ -416,7 +416,10 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 					}
 				}
 
-
+				if (parser->stream->hlsconfig.key_frame_count - 1 >= 600 && parser->stream->hlsconfig.key_frame_count - 1 < 606)
+				{
+					int x = 0;
+				}
 				//if (parser->stream->hlsconfig.key_frame_count - 1 >= 600 && parser->stream->hlsconfig.key_frame_count - 1 < 606)
 				//{
 				//	parser->stream->h264 = fopen("seek.h264", "ab");

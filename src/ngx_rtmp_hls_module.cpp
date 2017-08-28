@@ -826,6 +826,7 @@ ngx_int_t CHlsModule::ngx_rtmp_hls_close_fragment_ex2()
 	ngx_rtmp_mpegts_close_file(&this->ctx.file);
 
 	this->ctx.opened = 0;
+	this->ctx.aframe_num = 0;
 
 	//ngx_rtmp_hls_next_frag(&this->ctx, &this->hacf);
 
