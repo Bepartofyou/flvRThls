@@ -51,10 +51,22 @@ struct gengetopt_args_info
   int key_ID_end_arg;	/**< @brief flv keyframe end index number, '-1' means max index (default='-1').  */
   char * key_ID_end_orig;	/**< @brief flv keyframe end index number, '-1' means max index original value given at command line.  */
   const char *key_ID_end_help; /**< @brief flv keyframe end index number, '-1' means max index help description.  */
-  int m3u8_flag;	/**< @brief generate m3u8 file Flag with default 'on' (default=on).  */
-  const char *m3u8_help; /**< @brief generate m3u8 file Flag with default 'on' help description.  */
+  int m3u8_flag;	/**< @brief generate m3u8 file Flag with default 'off' (default=off).  */
+  const char *m3u8_help; /**< @brief generate m3u8 file Flag with default 'off' help description.  */
   int ts_flag;	/**< @brief generate ts files Flag with default 'off' (default=off).  */
   const char *ts_help; /**< @brief generate ts files Flag with default 'off' help description.  */
+  int audio_cc_arg;	/**< @brief TS audio slices count.  */
+  char * audio_cc_orig;	/**< @brief TS audio slices count original value given at command line.  */
+  const char *audio_cc_help; /**< @brief TS audio slices count help description.  */
+  int video_cc_arg;	/**< @brief TS video slices count.  */
+  char * video_cc_orig;	/**< @brief TS video slices count original value given at command line.  */
+  const char *video_cc_help; /**< @brief TS video slices count help description.  */
+  int aframe_base_arg;	/**< @brief audio frame base time.  */
+  char * aframe_base_orig;	/**< @brief audio frame base time original value given at command line.  */
+  const char *aframe_base_help; /**< @brief audio frame base time help description.  */
+  int aframe_pts_arg;	/**< @brief audio frame pts.  */
+  char * aframe_pts_orig;	/**< @brief audio frame pts original value given at command line.  */
+  const char *aframe_pts_help; /**< @brief audio frame pts help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -64,6 +76,10 @@ struct gengetopt_args_info
   unsigned int key_ID_end_given ;	/**< @brief Whether key_ID_end was given.  */
   unsigned int m3u8_given ;	/**< @brief Whether m3u8 was given.  */
   unsigned int ts_given ;	/**< @brief Whether ts was given.  */
+  unsigned int audio_cc_given ;	/**< @brief Whether audio_cc was given.  */
+  unsigned int video_cc_given ;	/**< @brief Whether video_cc was given.  */
+  unsigned int aframe_base_given ;	/**< @brief Whether aframe_base was given.  */
+  unsigned int aframe_pts_given ;	/**< @brief Whether aframe_pts was given.  */
 
 } ;
 

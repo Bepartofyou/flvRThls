@@ -37,8 +37,12 @@ const char *gengetopt_args_info_help[] = {
   "  -o, --outpath=STRING    the output ts file path  (default=`./')",
   "  -s, --key_ID_start=INT  flv keyframe start index number, '0' means min index  \n                            (default=`0')",
   "  -e, --key_ID_end=INT    flv keyframe end index number, '-1' means max index  \n                            (default=`-1')",
-  "  -m, --m3u8              generate m3u8 file Flag with default 'on'  \n                            (default=on)",
+  "  -m, --m3u8              generate m3u8 file Flag with default 'off'  \n                            (default=off)",
   "  -t, --ts                generate ts files Flag with default 'off'  \n                            (default=off)",
+  "  -a, --audio_cc=INT      TS audio slices count",
+  "  -v, --video_cc=INT      TS video slices count",
+  "  -b, --aframe_base=INT   audio frame base time",
+  "  -p, --aframe_pts=INT    audio frame pts",
     0
 };
 
@@ -74,6 +78,10 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->key_ID_end_given = 0 ;
   args_info->m3u8_given = 0 ;
   args_info->ts_given = 0 ;
+  args_info->audio_cc_given = 0 ;
+  args_info->video_cc_given = 0 ;
+  args_info->aframe_base_given = 0 ;
+  args_info->aframe_pts_given = 0 ;
 }
 
 static
@@ -88,8 +96,12 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->key_ID_start_orig = NULL;
   args_info->key_ID_end_arg = -1;
   args_info->key_ID_end_orig = NULL;
-  args_info->m3u8_flag = 1;
+  args_info->m3u8_flag = 0;
   args_info->ts_flag = 0;
+  args_info->audio_cc_orig = NULL;
+  args_info->video_cc_orig = NULL;
+  args_info->aframe_base_orig = NULL;
+  args_info->aframe_pts_orig = NULL;
   
 }
 
@@ -106,6 +118,10 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->key_ID_end_help = gengetopt_args_info_help[5] ;
   args_info->m3u8_help = gengetopt_args_info_help[6] ;
   args_info->ts_help = gengetopt_args_info_help[7] ;
+  args_info->audio_cc_help = gengetopt_args_info_help[8] ;
+  args_info->video_cc_help = gengetopt_args_info_help[9] ;
+  args_info->aframe_base_help = gengetopt_args_info_help[10] ;
+  args_info->aframe_pts_help = gengetopt_args_info_help[11] ;
   
 }
 
@@ -192,6 +208,10 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->outpath_orig));
   free_string_field (&(args_info->key_ID_start_orig));
   free_string_field (&(args_info->key_ID_end_orig));
+  free_string_field (&(args_info->audio_cc_orig));
+  free_string_field (&(args_info->video_cc_orig));
+  free_string_field (&(args_info->aframe_base_orig));
+  free_string_field (&(args_info->aframe_pts_orig));
   
   
 
@@ -238,6 +258,14 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "m3u8", 0, 0 );
   if (args_info->ts_given)
     write_into_file(outfile, "ts", 0, 0 );
+  if (args_info->audio_cc_given)
+    write_into_file(outfile, "audio_cc", args_info->audio_cc_orig, 0);
+  if (args_info->video_cc_given)
+    write_into_file(outfile, "video_cc", args_info->video_cc_orig, 0);
+  if (args_info->aframe_base_given)
+    write_into_file(outfile, "aframe_base", args_info->aframe_base_orig, 0);
+  if (args_info->aframe_pts_given)
+    write_into_file(outfile, "aframe_pts", args_info->aframe_pts_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -357,6 +385,30 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
   if (! args_info->flvfile_given)
     {
       fprintf (stderr, "%s: '--flvfile' ('-f') option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->audio_cc_given)
+    {
+      fprintf (stderr, "%s: '--audio_cc' ('-a') option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->video_cc_given)
+    {
+      fprintf (stderr, "%s: '--video_cc' ('-v') option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->aframe_base_given)
+    {
+      fprintf (stderr, "%s: '--aframe_base' ('-b') option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->aframe_pts_given)
+    {
+      fprintf (stderr, "%s: '--aframe_pts' ('-p') option required%s\n", prog_name, (additional_error ? additional_error : ""));
       error = 1;
     }
   
@@ -1125,6 +1177,10 @@ cmdline_parser_internal (
         { "key_ID_end",	1, NULL, 'e' },
         { "m3u8",	0, NULL, 'm' },
         { "ts",	0, NULL, 't' },
+        { "audio_cc",	1, NULL, 'a' },
+        { "video_cc",	1, NULL, 'v' },
+        { "aframe_base",	1, NULL, 'b' },
+        { "aframe_pts",	1, NULL, 'p' },
         { 0,  0, 0, 0 }
       };
 
@@ -1133,7 +1189,7 @@ cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "hVf:o:s:e:mt", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "hVf:o:s:e:mta:v:b:p:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1202,7 +1258,7 @@ cmdline_parser_internal (
             goto failure;
         
           break;
-        case 'm':	/* generate m3u8 file Flag with default 'on'.  */
+        case 'm':	/* generate m3u8 file Flag with default 'off'.  */
         
         
           if (update_arg((void *)&(args_info->m3u8_flag), 0, &(args_info->m3u8_given),
@@ -1218,6 +1274,54 @@ cmdline_parser_internal (
           if (update_arg((void *)&(args_info->ts_flag), 0, &(args_info->ts_given),
               &(local_args_info.ts_given), optarg, 0, 0, ARG_FLAG,
               check_ambiguity, override, 1, 0, "ts", 't',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'a':	/* TS audio slices count.  */
+        
+        
+          if (update_arg( (void *)&(args_info->audio_cc_arg), 
+               &(args_info->audio_cc_orig), &(args_info->audio_cc_given),
+              &(local_args_info.audio_cc_given), optarg, 0, 0, ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "audio_cc", 'a',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'v':	/* TS video slices count.  */
+        
+        
+          if (update_arg( (void *)&(args_info->video_cc_arg), 
+               &(args_info->video_cc_orig), &(args_info->video_cc_given),
+              &(local_args_info.video_cc_given), optarg, 0, 0, ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "video_cc", 'v',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'b':	/* audio frame base time.  */
+        
+        
+          if (update_arg( (void *)&(args_info->aframe_base_arg), 
+               &(args_info->aframe_base_orig), &(args_info->aframe_base_given),
+              &(local_args_info.aframe_base_given), optarg, 0, 0, ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "aframe_base", 'b',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'p':	/* audio frame pts.  */
+        
+        
+          if (update_arg( (void *)&(args_info->aframe_pts_arg), 
+               &(args_info->aframe_pts_orig), &(args_info->aframe_pts_given),
+              &(local_args_info.aframe_pts_given), optarg, 0, 0, ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "aframe_pts", 'p',
               additional_error))
             goto failure;
         
