@@ -245,8 +245,9 @@ static int hls_segment(flv_parser * parser) {
 		//	//parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
 		//}
 		//
-		if (((parser->key_ID_end == -1) && (parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->stream->keyframePos.size())) ||
-			((int)(parser->stream->hlsconfig.key_frame_count + parser->key_ID_start) < (int)parser->key_ID_end))
+		/*if (((parser->key_ID_end == -1) && (parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->stream->keyframePos.size())) ||
+			((int)(parser->stream->hlsconfig.key_frame_count + parser->key_ID_start) < (int)parser->key_ID_end))*/
+		if (!parser->flag_over)
 		{
 			if (parser->b_ts)
 				parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 0);
