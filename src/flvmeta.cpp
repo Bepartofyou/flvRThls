@@ -59,6 +59,7 @@ int main(int argc, char ** argv) {
 	parser.hlsmodule->ctx.aframe_base = info.aframe_base_arg;
 	parser.hlsmodule->ctx.aframe_pts = info.aframe_pts_arg;
 
+	parser.ts_name = " ";
 	parser.b_m3u8 = info.m3u8_flag;
 	parser.b_ts = info.ts_flag;
 	parser.key_ID_start = info.key_ID_start_arg;

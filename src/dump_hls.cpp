@@ -168,6 +168,23 @@ static int hls_segment(flv_parser * parser) {
 			parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
 			//parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
 		}
+
+		if (parser->ts_name != " ")
+		{
+			uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
+			parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
+
+			parser->stream->hlsconfig.hls_segment_duration = parser->stream->hlsconfig.hls_segment_duration > interval ?
+				parser->stream->hlsconfig.hls_segment_duration : interval;
+
+			char ts[100] = { 0 };
+			sprintf(ts, "%.6f", (double)interval / (double)1000);
+			std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
+			parser->hls_content.push_back(strts);
+
+			parser->hls_content.push_back(parser->ts_name);
+		}
+		
 	}
 
 
@@ -186,6 +203,7 @@ static int hls_segment(flv_parser * parser) {
 		if (((parser->key_ID_end == -1) && (parser->stream->hlsconfig.key_frame_count + parser->key_ID_start < parser->stream->keyframePos.size())) ||
 			((int)(parser->stream->hlsconfig.key_frame_count + parser->key_ID_start) < (int)parser->key_ID_end))
 		{
+#if 0
 			uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
 			parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
 
@@ -197,16 +215,9 @@ static int hls_segment(flv_parser * parser) {
 			std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
 			parser->hls_content.push_back(strts);
 
-			//char conunt[100] = { 0 };
-			//sprintf(conunt, "%.4u", parser->stream->hlsconfig.hls_count);
-			//std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(".")) + "-key-" +
-			//	num2str(parser->stream->hlsconfig.key_frame_current > 0 ? parser->stream->hlsconfig.key_frame_current - 1 : 0) +
-			//	"-ac-" + num2str(parser->hlsmodule->m_last_ac) + "-vc-" + num2str(parser->hlsmodule->m_last_vc) +
-			//	"-base-" + num2str(parser->hlsmodule->m_last_base) + "-pts-" + num2str(parser->hlsmodule->m_last_pts) +
-			//	"-" + std::string(conunt) + ".ts\n";
-
-			//parser->hls_content.push_back(strfile);
 			parser->hls_content.push_back(get_ts_name_ex(parser) + "\n");
+#endif
+			parser->ts_name = get_ts_name_ex(parser) + "\n";
 			
 		}
 
