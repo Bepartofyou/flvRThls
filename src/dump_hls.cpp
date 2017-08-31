@@ -234,6 +234,22 @@ static int hls_segment(flv_parser * parser) {
 		if (parser->flag_over)
 		{
 
+			//if (parser->stream->hlsconfig.ts_count == 0)
+			//{
+			//	uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
+			//	parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
+
+			//	parser->stream->hlsconfig.hls_segment_duration = parser->stream->hlsconfig.hls_segment_duration > interval ?
+			//		parser->stream->hlsconfig.hls_segment_duration : interval;
+
+			//	char ts[100] = { 0 };
+			//	sprintf(ts, "%.6f", (double)interval / (double)1000);
+			//	std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
+
+			//	parser->hls_content[4] = strts;
+			//}
+
+
 			parser->hls_content.push_back("#EXT-X-ENDLIST");
 			std::string strts = "#EXT-X-TARGETDURATION:" + num2str(ceil((double)parser->stream->hlsconfig.hls_segment_duration / (double)1000)) + "\n";
 			parser->hls_content[2] = strts;
