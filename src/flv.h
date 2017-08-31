@@ -262,8 +262,7 @@ typedef struct __flv_parser {
     flv_stream * stream;
 	CHlsModule* hlsmodule;
 	std::vector<std::string> hls_content;
-	//std::string ts_name;
-	int ts_start_flag;
+	std::string ts_name;
 
 	int b_ts;
 	int b_m3u8;

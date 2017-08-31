@@ -169,10 +169,8 @@ static int hls_segment(flv_parser * parser) {
 			//parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex();
 		}
 
-		if (parser->ts_start_flag)
+		if (parser->ts_name != " ")
 		{
-			std::string tmp = parser->hls_content[parser->hls_content.size() - 1];
-
 			uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
 			parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
 
@@ -182,12 +180,9 @@ static int hls_segment(flv_parser * parser) {
 			char ts[100] = { 0 };
 			sprintf(ts, "%.6f", (double)interval / (double)1000);
 			std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
-			//parser->hls_content.push_back(strts);
+			parser->hls_content.push_back(strts);
 
-			parser->hls_content[parser->hls_content.size() - 1] = strts;
-			parser->hls_content.push_back(tmp);
-
-			//parser->hls_content.push_back(parser->ts_name);
+			parser->hls_content.push_back(parser->ts_name);
 		}
 		
 	}
@@ -222,10 +217,7 @@ static int hls_segment(flv_parser * parser) {
 
 			parser->hls_content.push_back(get_ts_name_ex(parser) + "\n");
 #endif
-			if (!parser->ts_start_flag)
-				parser->ts_start_flag = 1;
-
-			parser->hls_content.push_back(get_ts_name_ex(parser) + "\n");
+			parser->ts_name = get_ts_name_ex(parser) + "\n";
 			
 		}
 
