@@ -187,6 +187,7 @@ static int hls_segment(flv_parser * parser) {
 			parser->hls_content[parser->hls_content.size() - 1] = strts;
 			parser->hls_content.push_back(tmp);
 
+			parser->ts_start_flag = 0;
 			//parser->hls_content.push_back(parser->ts_name);
 		}
 		
@@ -222,8 +223,8 @@ static int hls_segment(flv_parser * parser) {
 
 			parser->hls_content.push_back(get_ts_name_ex(parser) + "\n");
 #endif
-			if (!parser->ts_start_flag)
-				parser->ts_start_flag = 1;
+			/*if (!parser->ts_start_flag)
+				parser->ts_start_flag = 1;*/
 
 			parser->hls_content.push_back(get_ts_name_ex(parser) + "\n");
 			
@@ -285,9 +286,12 @@ static int hls_segment(flv_parser * parser) {
 		if (!parser->flag_over)
 		{
 			if (parser->b_ts)
-				parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 0);
+				parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 0);			
 			if (!parser->b_ts && parser->b_m3u8)
 				parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 1);
+
+			if (!parser->ts_start_flag)
+				parser->ts_start_flag = 1;
 
 			parser->hlsmodule->m_last_ac = parser->hlsmodule->ctx.audio_cc;
 			parser->hlsmodule->m_last_vc = parser->hlsmodule->ctx.video_cc;
