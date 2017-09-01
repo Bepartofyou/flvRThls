@@ -3,10 +3,12 @@
 #include <string.h>
 #include <list>
 #include <vector>
+#include <math.h>
 
 #include "flvmeta.h"
 #include "dump.h"
 #include "cmdline.h"
+
 
 
 static void judge_segment_num(flv_parser& parser){
