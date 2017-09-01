@@ -303,6 +303,226 @@ static int hls_segment(flv_parser * parser) {
 	return OK;
 }
 
+static int hls_segment_ts(flv_parser * parser) {
+
+	if (parser->ts_start_flag)
+	{
+		parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
+
+		//std::string tmp = parser->hls_content[parser->hls_content.size() - 1];
+
+		//uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
+		//parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
+
+		//parser->stream->hlsconfig.hls_segment_duration = parser->stream->hlsconfig.hls_segment_duration > interval ?
+		//	parser->stream->hlsconfig.hls_segment_duration : interval;
+
+		//char ts[100] = { 0 };
+		//sprintf(ts, "%.6f", (double)interval / (double)1000);
+		//std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
+
+		//parser->hls_content[parser->hls_content.size() - 1] = strts;
+		//parser->hls_content.push_back(tmp);
+
+		parser->ts_start_flag = 0;
+	}
+
+
+	//if (parser->stream->hlsconfig.hls_file == NULL){
+	//	std::string hlsname = get_flv_key(std::string(parser->stream->flvname), std::string(parser->stream->outpath)) + ".m3u8";
+	//	parser->stream->hlsconfig.hls_file = fopen(hlsname.c_str(), "wb");
+
+	//	parser->hls_content.push_back("#EXTM3U\n");
+	//	parser->hls_content.push_back("#EXT-X-VERSION:3\n");
+	//	parser->hls_content.push_back("#EXT-X-TARGETDURATION:12\n");
+	//	parser->hls_content.push_back("#EXT-X-MEDIA-SEQUENCE:0\n");
+	//}
+
+	if (!parser->flag_over)
+	{
+		//parser->hls_content.push_back(get_ts_name_ex(parser) + "\n");
+
+		parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 0);
+
+		parser->hlsmodule->m_last_ac = parser->hlsmodule->ctx.audio_cc;
+		parser->hlsmodule->m_last_vc = parser->hlsmodule->ctx.video_cc;
+		parser->hlsmodule->m_last_base = parser->hlsmodule->ctx.aframe_base;
+		parser->hlsmodule->m_last_pts = parser->hlsmodule->ctx.aframe_pts;
+
+		if (!parser->ts_start_flag)
+			parser->ts_start_flag = 1;
+	}
+	else
+	{
+		//parser->hls_content.push_back("#EXT-X-ENDLIST");
+		//std::string strts = "#EXT-X-TARGETDURATION:" + num2str(ceil((double)parser->stream->hlsconfig.hls_segment_duration / (double)1000)) + "\n";
+		//parser->hls_content[2] = strts;
+
+		//for (size_t index = 0; index < parser->hls_content.size(); index++)
+		//	fwrite(parser->hls_content[index].c_str(), parser->hls_content[index].size(), 1, parser->stream->hlsconfig.hls_file);
+
+		//if (parser->stream->hlsconfig.hls_file){
+		//	fclose(parser->stream->hlsconfig.hls_file);
+		//	parser->stream->hlsconfig.hls_file = NULL;
+		//}
+
+		//std::vector<std::string>().swap(parser->hls_content);
+	}
+
+	return OK;
+}
+
+static int hls_segment_m3u8(flv_parser * parser) {
+	if (parser->ts_start_flag)
+	{
+		parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
+
+		std::string tmp = parser->hls_content[parser->hls_content.size() - 1];
+
+		uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
+		parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
+
+		parser->stream->hlsconfig.hls_segment_duration = parser->stream->hlsconfig.hls_segment_duration > interval ?
+			parser->stream->hlsconfig.hls_segment_duration : interval;
+
+		char ts[100] = { 0 };
+		sprintf(ts, "%.6f", (double)interval / (double)1000);
+		std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
+
+		parser->hls_content[parser->hls_content.size() - 1] = strts;
+		parser->hls_content.push_back(tmp);
+
+		parser->ts_start_flag = 0;
+	}
+
+
+	if (parser->stream->hlsconfig.hls_file == NULL){
+		std::string hlsname = get_flv_key(std::string(parser->stream->flvname), std::string(parser->stream->outpath)) + ".m3u8";
+		parser->stream->hlsconfig.hls_file = fopen(hlsname.c_str(), "wb");
+
+		parser->hls_content.push_back("#EXTM3U\n");
+		parser->hls_content.push_back("#EXT-X-VERSION:3\n");
+		parser->hls_content.push_back("#EXT-X-TARGETDURATION:12\n");
+		parser->hls_content.push_back("#EXT-X-MEDIA-SEQUENCE:0\n");
+	}
+
+	if (!parser->flag_over)
+	{
+		parser->hls_content.push_back(get_ts_name_ex(parser) + "\n");
+
+		parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 1);
+
+		parser->hlsmodule->m_last_ac = parser->hlsmodule->ctx.audio_cc;
+		parser->hlsmodule->m_last_vc = parser->hlsmodule->ctx.video_cc;
+		parser->hlsmodule->m_last_base = parser->hlsmodule->ctx.aframe_base;
+		parser->hlsmodule->m_last_pts = parser->hlsmodule->ctx.aframe_pts;
+
+		if (!parser->ts_start_flag)
+			parser->ts_start_flag = 1;
+	}
+	else
+	{
+		parser->hls_content.push_back("#EXT-X-ENDLIST");
+		std::string strts = "#EXT-X-TARGETDURATION:" + num2str(ceil((double)parser->stream->hlsconfig.hls_segment_duration / (double)1000)) + "\n";
+		parser->hls_content[2] = strts;
+
+		for (size_t index = 0; index < parser->hls_content.size(); index++)
+			fwrite(parser->hls_content[index].c_str(), parser->hls_content[index].size(), 1, parser->stream->hlsconfig.hls_file);
+
+		if (parser->stream->hlsconfig.hls_file){
+			fclose(parser->stream->hlsconfig.hls_file);
+			parser->stream->hlsconfig.hls_file = NULL;
+		}
+
+		std::vector<std::string>().swap(parser->hls_content);
+	}
+
+	return OK;
+}
+
+static int hls_segment_ts_m3u8(flv_parser * parser) {
+
+	if (parser->ts_start_flag)
+	{
+		parser->hlsmodule->ngx_rtmp_hls_close_fragment_ex2();
+
+		std::string tmp = parser->hls_content[parser->hls_content.size() - 1];
+
+		uint32_t interval = parser->stream->hlsconfig.hls_end_ts - parser->stream->hlsconfig.hls_start_ts;
+		parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.hls_end_ts;
+
+		parser->stream->hlsconfig.hls_segment_duration = parser->stream->hlsconfig.hls_segment_duration > interval ?
+			parser->stream->hlsconfig.hls_segment_duration : interval;
+
+		char ts[100] = { 0 };
+		sprintf(ts, "%.6f", (double)interval / (double)1000);
+		std::string strts = "#EXTINF:" + std::string(ts) + ",\n";
+
+		parser->hls_content[parser->hls_content.size() - 1] = strts;
+		parser->hls_content.push_back(tmp);
+
+		parser->ts_start_flag = 0;
+	}
+
+
+	if (parser->stream->hlsconfig.hls_file == NULL){
+		std::string hlsname = get_flv_key(std::string(parser->stream->flvname), std::string(parser->stream->outpath)) + ".m3u8";
+		parser->stream->hlsconfig.hls_file = fopen(hlsname.c_str(), "wb");
+
+		parser->hls_content.push_back("#EXTM3U\n");
+		parser->hls_content.push_back("#EXT-X-VERSION:3\n");
+		parser->hls_content.push_back("#EXT-X-TARGETDURATION:12\n");
+		parser->hls_content.push_back("#EXT-X-MEDIA-SEQUENCE:0\n");
+	}
+
+	if (!parser->flag_over)
+	{
+		parser->hls_content.push_back(get_ts_name_ex(parser) + "\n");
+
+		parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 0);
+		//if (!parser->b_ts && parser->b_m3u8)
+		//	parser->hlsmodule->ngx_rtmp_hls_open_fragment_ex(get_ts_name(parser).c_str(), 0, 0, 1);
+
+		parser->hlsmodule->m_last_ac = parser->hlsmodule->ctx.audio_cc;
+		parser->hlsmodule->m_last_vc = parser->hlsmodule->ctx.video_cc;
+		parser->hlsmodule->m_last_base = parser->hlsmodule->ctx.aframe_base;
+		parser->hlsmodule->m_last_pts = parser->hlsmodule->ctx.aframe_pts;
+
+		if (!parser->ts_start_flag)
+			parser->ts_start_flag = 1;
+	}
+	else
+	{
+		parser->hls_content.push_back("#EXT-X-ENDLIST");
+		std::string strts = "#EXT-X-TARGETDURATION:" + num2str(ceil((double)parser->stream->hlsconfig.hls_segment_duration / (double)1000)) + "\n";
+		parser->hls_content[2] = strts;
+
+		for (size_t index = 0; index < parser->hls_content.size(); index++)
+			fwrite(parser->hls_content[index].c_str(), parser->hls_content[index].size(), 1, parser->stream->hlsconfig.hls_file);
+
+		if (parser->stream->hlsconfig.hls_file){
+			fclose(parser->stream->hlsconfig.hls_file);
+			parser->stream->hlsconfig.hls_file = NULL;
+		}
+
+		std::vector<std::string>().swap(parser->hls_content);
+	}
+
+	return OK;
+}
+
+static int hls_segment_ex(flv_parser * parser) {
+
+	if ((parser->b_m3u8 && parser->b_ts) || ((!parser->b_m3u8 && !parser->b_ts)))
+		hls_segment_ts_m3u8(parser);
+	else if (parser->b_m3u8 && !parser->b_ts)
+		hls_segment_m3u8(parser);
+	else/* £¡parser->b_m3u8 && parser->b_ts*/
+		hls_segment_ts(parser);
+
+	return OK;
+}
+
 static int hls_on_video_tag(flv_tag * tag, flv_video_tag vt, flv_parser * parser) {
     printf("* Video codec: %s\n", dump_string_get_video_codec(vt));
     printf("* Video frame type: %s\n", dump_string_get_video_frame_type(vt));
@@ -388,7 +608,7 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 				printf("first pkt ts:%u, video\n", parser->stream->hlsconfig.first_ts);
 
 				parser->stream->hlsconfig.hls_segment_num = 6;
-				hls_segment(parser);
+				hls_segment_ex(parser);
 
 				parser->stream->hlsconfig.flag_first_ts = true;
 			}
@@ -465,7 +685,7 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 					{
 						parser->stream->hlsconfig.ts_fragment_id = parser->stream->hlsconfig.key_frame_count;
 						parser->stream->hlsconfig.ts_count++;
-						hls_segment(parser);
+						hls_segment_ex(parser);
 						parser->stream->hlsconfig.key_frame_current = parser->stream->hlsconfig.key_frame_count;
 						parser->stream->hlsconfig.hls_count++;
 					}
@@ -663,7 +883,7 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 				printf("first pkt ts:%u, audio\n", parser->stream->hlsconfig.first_ts);
 
 				parser->stream->hlsconfig.hls_segment_num = 6;
-				hls_segment(parser);
+				hls_segment_ex(parser);
 
 				parser->stream->hlsconfig.flag_first_ts = true;
 			}
@@ -748,7 +968,7 @@ static int hls_segment_finish(flv_tag * tag, amf_data * name, amf_data * data, f
 
 	parser->flag_over = 1;
 
-	hls_segment(parser);
+	hls_segment_ex(parser);
 
 	return OK;
 }
