@@ -11,14 +11,14 @@
 
 
 
-static void judge_segment_num(flv_parser& parser){
+static void judge_segment_num(flv_parser& parser, int segment){
 	int vecSize = parser.stream->keyframeTs.size();
 
 	//for (size_t i = 0; i < vecSize-1; i++)
 	//{
 	//	printf("%f\n", parser.stream->keyframeTs[i]);
 	//}
-	int segment_nub = ceil((double)5 * (double)vecSize / (double)(parser.stream->keyframeTs[vecSize - 1] - parser.stream->keyframeTs[0]));
+	int segment_nub = ceil((double)segment * (double)vecSize / (double)(parser.stream->keyframeTs[vecSize - 1] - parser.stream->keyframeTs[0]));
 
 	parser.segment_num = segment_nub > 6 ? 6 : segment_nub;
 }
@@ -89,7 +89,7 @@ int main(int argc, char ** argv) {
 		break;
 	case FLVMETA_FULL_DUMP_COMMAND:{
 		errcode = dump_flv_file(&options, &parser);
-		judge_segment_num(parser);
+		judge_segment_num(parser, info.segmengttime_arg);
 
 		errcode = fragment_flv_file(&options, &parser);
 		int xxx = 0;
