@@ -34,6 +34,7 @@ const char *gengetopt_args_info_help[] = {
   "  -h, --help              Print help and exit",
   "  -V, --version           Print version and exit",
   "  -f, --flvfile=STRING    the input flv file",
+  "  -g, --segmengttime=INT  set segment time, unit: s   (default=`5')",
   "  -o, --outpath=STRING    the output ts file path  (default=`./')",
   "  -s, --key_ID_start=INT  flv keyframe start index number, '0' means min index  \n                            (default=`0')",
   "  -e, --key_ID_end=INT    flv keyframe end index number, '-1' means max index  \n                            (default=`-1')",
@@ -73,6 +74,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->flvfile_given = 0 ;
+  args_info->segmengttime_given = 0 ;
   args_info->outpath_given = 0 ;
   args_info->key_ID_start_given = 0 ;
   args_info->key_ID_end_given = 0 ;
@@ -90,6 +92,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->flvfile_arg = NULL;
   args_info->flvfile_orig = NULL;
+  args_info->segmengttime_arg = 5;
+  args_info->segmengttime_orig = NULL;
   args_info->outpath_arg = gengetopt_strdup ("./");
   args_info->outpath_orig = NULL;
   args_info->key_ID_start_arg = 0;
@@ -117,15 +121,16 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->help_help = gengetopt_args_info_help[0] ;
   args_info->version_help = gengetopt_args_info_help[1] ;
   args_info->flvfile_help = gengetopt_args_info_help[2] ;
-  args_info->outpath_help = gengetopt_args_info_help[3] ;
-  args_info->key_ID_start_help = gengetopt_args_info_help[4] ;
-  args_info->key_ID_end_help = gengetopt_args_info_help[5] ;
-  args_info->m3u8_help = gengetopt_args_info_help[6] ;
-  args_info->ts_help = gengetopt_args_info_help[7] ;
-  args_info->audio_cc_help = gengetopt_args_info_help[8] ;
-  args_info->video_cc_help = gengetopt_args_info_help[9] ;
-  args_info->aframe_base_help = gengetopt_args_info_help[10] ;
-  args_info->aframe_pts_help = gengetopt_args_info_help[11] ;
+  args_info->segmengttime_help = gengetopt_args_info_help[3] ;
+  args_info->outpath_help = gengetopt_args_info_help[4] ;
+  args_info->key_ID_start_help = gengetopt_args_info_help[5] ;
+  args_info->key_ID_end_help = gengetopt_args_info_help[6] ;
+  args_info->m3u8_help = gengetopt_args_info_help[7] ;
+  args_info->ts_help = gengetopt_args_info_help[8] ;
+  args_info->audio_cc_help = gengetopt_args_info_help[9] ;
+  args_info->video_cc_help = gengetopt_args_info_help[10] ;
+  args_info->aframe_base_help = gengetopt_args_info_help[11] ;
+  args_info->aframe_pts_help = gengetopt_args_info_help[12] ;
   
 }
 
@@ -208,6 +213,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
 
   free_string_field (&(args_info->flvfile_arg));
   free_string_field (&(args_info->flvfile_orig));
+  free_string_field (&(args_info->segmengttime_orig));
   free_string_field (&(args_info->outpath_arg));
   free_string_field (&(args_info->outpath_orig));
   free_string_field (&(args_info->key_ID_start_orig));
@@ -252,6 +258,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->flvfile_given)
     write_into_file(outfile, "flvfile", args_info->flvfile_orig, 0);
+  if (args_info->segmengttime_given)
+    write_into_file(outfile, "segmengttime", args_info->segmengttime_orig, 0);
   if (args_info->outpath_given)
     write_into_file(outfile, "outpath", args_info->outpath_orig, 0);
   if (args_info->key_ID_start_given)
@@ -1152,6 +1160,7 @@ cmdline_parser_internal (
         { "help",	0, NULL, 'h' },
         { "version",	0, NULL, 'V' },
         { "flvfile",	1, NULL, 'f' },
+        { "segmengttime",	1, NULL, 'g' },
         { "outpath",	1, NULL, 'o' },
         { "key_ID_start",	1, NULL, 's' },
         { "key_ID_end",	1, NULL, 'e' },
@@ -1169,7 +1178,7 @@ cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "hVf:o:s:e:mta:v:b:p:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "hVf:g:o:s:e:mta:v:b:p:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1198,6 +1207,18 @@ cmdline_parser_internal (
               &(local_args_info.flvfile_given), optarg, 0, 0, ARG_STRING,
               check_ambiguity, override, 0, 0,
               "flvfile", 'f',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'g':	/* set segment time, unit: s .  */
+        
+        
+          if (update_arg( (void *)&(args_info->segmengttime_arg), 
+               &(args_info->segmengttime_orig), &(args_info->segmengttime_given),
+              &(local_args_info.segmengttime_given), optarg, 0, "5", ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "segmengttime", 'g',
               additional_error))
             goto failure;
         

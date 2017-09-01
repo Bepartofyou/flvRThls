@@ -42,6 +42,9 @@ struct gengetopt_args_info
   char * flvfile_arg;	/**< @brief the input flv file.  */
   char * flvfile_orig;	/**< @brief the input flv file original value given at command line.  */
   const char *flvfile_help; /**< @brief the input flv file help description.  */
+  int segmengttime_arg;	/**< @brief set segment time, unit: s  (default='5').  */
+  char * segmengttime_orig;	/**< @brief set segment time, unit: s  original value given at command line.  */
+  const char *segmengttime_help; /**< @brief set segment time, unit: s  help description.  */
   char * outpath_arg;	/**< @brief the output ts file path (default='./').  */
   char * outpath_orig;	/**< @brief the output ts file path original value given at command line.  */
   const char *outpath_help; /**< @brief the output ts file path help description.  */
@@ -71,6 +74,7 @@ struct gengetopt_args_info
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int flvfile_given ;	/**< @brief Whether flvfile was given.  */
+  unsigned int segmengttime_given ;	/**< @brief Whether segmengttime was given.  */
   unsigned int outpath_given ;	/**< @brief Whether outpath was given.  */
   unsigned int key_ID_start_given ;	/**< @brief Whether key_ID_start was given.  */
   unsigned int key_ID_end_given ;	/**< @brief Whether key_ID_end was given.  */
