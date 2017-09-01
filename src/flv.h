@@ -270,6 +270,7 @@ typedef struct __flv_parser {
 	int key_ID_start;
 	int key_ID_end;
 	int flag_over;
+	int segment_num;
 
     void * user_data;
     int (* on_header)(flv_header * header, struct __flv_parser * parser);

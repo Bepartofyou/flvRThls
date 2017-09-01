@@ -610,7 +610,8 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 				parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.first_ts;
 				printf("first pkt ts:%u, video\n", parser->stream->hlsconfig.first_ts);
 
-				parser->stream->hlsconfig.hls_segment_num = 6;
+				//parser->stream->hlsconfig.hls_segment_num = 6;
+				parser->stream->hlsconfig.hls_segment_num = parser->segment_num;
 				hls_segment_ex(parser);
 
 				parser->stream->hlsconfig.flag_first_ts = true;
@@ -885,7 +886,8 @@ static int hls_on_audio_tag_ex(flv_tag * tag, flv_audio_tag at, flv_parser * par
 				parser->stream->hlsconfig.hls_start_ts = parser->stream->hlsconfig.first_ts;
 				printf("first pkt ts:%u, audio\n", parser->stream->hlsconfig.first_ts);
 
-				parser->stream->hlsconfig.hls_segment_num = 6;
+				//parser->stream->hlsconfig.hls_segment_num = 6;
+				parser->stream->hlsconfig.hls_segment_num = parser->segment_num;
 				hls_segment_ex(parser);
 
 				parser->stream->hlsconfig.flag_first_ts = true;

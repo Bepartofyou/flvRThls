@@ -8,6 +8,19 @@
 #include "dump.h"
 #include "cmdline.h"
 
+
+static void judge_segment_num(flv_parser& parser){
+	int vecSize = parser.stream->keyframeTs.size();
+
+	//for (size_t i = 0; i < vecSize-1; i++)
+	//{
+	//	printf("%f\n", parser.stream->keyframeTs[i]);
+	//}
+	int segment_nub = ceil((double)5 * (double)vecSize / (double)(parser.stream->keyframeTs[vecSize - 1] - parser.stream->keyframeTs[0]));
+
+	parser.segment_num = segment_nub > 6 ? 6 : segment_nub;
+}
+
 int main(int argc, char ** argv) {
 
 	struct gengetopt_args_info info;
@@ -74,6 +87,8 @@ int main(int argc, char ** argv) {
 		break;
 	case FLVMETA_FULL_DUMP_COMMAND:{
 		errcode = dump_flv_file(&options, &parser);
+		judge_segment_num(parser);
+
 		errcode = fragment_flv_file(&options, &parser);
 		int xxx = 0;
 		}
