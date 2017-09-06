@@ -82,6 +82,7 @@ typedef struct __flvmeta_opts {
     int command;
     char * input_file;
     char * output_file;
+	char * domain;
     amf_data * metadata;
     int dump_metadata;
     int check_level;
