@@ -38,6 +38,8 @@ const char *gengetopt_args_info_help[] = {
   "  -o, --outpath=STRING    the output ts file path  (default=`./')",
   "  -s, --key_ID_start=INT  flv keyframe start index number, '0' means min index  \n                            (default=`0')",
   "  -e, --key_ID_end=INT    flv keyframe end index number, '-1' means max index  \n                            (default=`-1')",
+  "  -x, --ts_start=INT      ts start index number  (default=`-1')",
+  "  -y, --ts_end=INT        ts start index number  (default=`-1')",
   "  -m, --m3u8              generate m3u8 file Flag with default 'off'  \n                            (default=off)",
   "  -t, --ts                generate ts files Flag with default 'off'  \n                            (default=off)",
   "  -a, --audio_cc=INT      TS audio slices count  (default=`0')",
@@ -78,6 +80,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->outpath_given = 0 ;
   args_info->key_ID_start_given = 0 ;
   args_info->key_ID_end_given = 0 ;
+  args_info->ts_start_given = 0 ;
+  args_info->ts_end_given = 0 ;
   args_info->m3u8_given = 0 ;
   args_info->ts_given = 0 ;
   args_info->audio_cc_given = 0 ;
@@ -100,6 +104,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->key_ID_start_orig = NULL;
   args_info->key_ID_end_arg = -1;
   args_info->key_ID_end_orig = NULL;
+  args_info->ts_start_arg = -1;
+  args_info->ts_start_orig = NULL;
+  args_info->ts_end_arg = -1;
+  args_info->ts_end_orig = NULL;
   args_info->m3u8_flag = 0;
   args_info->ts_flag = 0;
   args_info->audio_cc_arg = 0;
@@ -125,12 +133,14 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->outpath_help = gengetopt_args_info_help[4] ;
   args_info->key_ID_start_help = gengetopt_args_info_help[5] ;
   args_info->key_ID_end_help = gengetopt_args_info_help[6] ;
-  args_info->m3u8_help = gengetopt_args_info_help[7] ;
-  args_info->ts_help = gengetopt_args_info_help[8] ;
-  args_info->audio_cc_help = gengetopt_args_info_help[9] ;
-  args_info->video_cc_help = gengetopt_args_info_help[10] ;
-  args_info->aframe_base_help = gengetopt_args_info_help[11] ;
-  args_info->aframe_pts_help = gengetopt_args_info_help[12] ;
+  args_info->ts_start_help = gengetopt_args_info_help[7] ;
+  args_info->ts_end_help = gengetopt_args_info_help[8] ;
+  args_info->m3u8_help = gengetopt_args_info_help[9] ;
+  args_info->ts_help = gengetopt_args_info_help[10] ;
+  args_info->audio_cc_help = gengetopt_args_info_help[11] ;
+  args_info->video_cc_help = gengetopt_args_info_help[12] ;
+  args_info->aframe_base_help = gengetopt_args_info_help[13] ;
+  args_info->aframe_pts_help = gengetopt_args_info_help[14] ;
   
 }
 
@@ -218,6 +228,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->outpath_orig));
   free_string_field (&(args_info->key_ID_start_orig));
   free_string_field (&(args_info->key_ID_end_orig));
+  free_string_field (&(args_info->ts_start_orig));
+  free_string_field (&(args_info->ts_end_orig));
   free_string_field (&(args_info->audio_cc_orig));
   free_string_field (&(args_info->video_cc_orig));
   free_string_field (&(args_info->aframe_base_orig));
@@ -266,6 +278,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "key_ID_start", args_info->key_ID_start_orig, 0);
   if (args_info->key_ID_end_given)
     write_into_file(outfile, "key_ID_end", args_info->key_ID_end_orig, 0);
+  if (args_info->ts_start_given)
+    write_into_file(outfile, "ts_start", args_info->ts_start_orig, 0);
+  if (args_info->ts_end_given)
+    write_into_file(outfile, "ts_end", args_info->ts_end_orig, 0);
   if (args_info->m3u8_given)
     write_into_file(outfile, "m3u8", 0, 0 );
   if (args_info->ts_given)
@@ -1164,6 +1180,8 @@ cmdline_parser_internal (
         { "outpath",	1, NULL, 'o' },
         { "key_ID_start",	1, NULL, 's' },
         { "key_ID_end",	1, NULL, 'e' },
+        { "ts_start",	1, NULL, 'x' },
+        { "ts_end",	1, NULL, 'y' },
         { "m3u8",	0, NULL, 'm' },
         { "ts",	0, NULL, 't' },
         { "audio_cc",	1, NULL, 'a' },
@@ -1178,7 +1196,7 @@ cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "hVf:g:o:s:e:mta:v:b:p:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "hVf:g:o:s:e:x:y:mta:v:b:p:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1255,6 +1273,30 @@ cmdline_parser_internal (
               &(local_args_info.key_ID_end_given), optarg, 0, "-1", ARG_INT,
               check_ambiguity, override, 0, 0,
               "key_ID_end", 'e',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'x':	/* ts start index number.  */
+        
+        
+          if (update_arg( (void *)&(args_info->ts_start_arg), 
+               &(args_info->ts_start_orig), &(args_info->ts_start_given),
+              &(local_args_info.ts_start_given), optarg, 0, "-1", ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "ts_start", 'x',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'y':	/* ts start index number.  */
+        
+        
+          if (update_arg( (void *)&(args_info->ts_end_arg), 
+               &(args_info->ts_end_orig), &(args_info->ts_end_given),
+              &(local_args_info.ts_end_given), optarg, 0, "-1", ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "ts_end", 'y',
               additional_error))
             goto failure;
         

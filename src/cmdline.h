@@ -54,6 +54,12 @@ struct gengetopt_args_info
   int key_ID_end_arg;	/**< @brief flv keyframe end index number, '-1' means max index (default='-1').  */
   char * key_ID_end_orig;	/**< @brief flv keyframe end index number, '-1' means max index original value given at command line.  */
   const char *key_ID_end_help; /**< @brief flv keyframe end index number, '-1' means max index help description.  */
+  int ts_start_arg;	/**< @brief ts start index number (default='-1').  */
+  char * ts_start_orig;	/**< @brief ts start index number original value given at command line.  */
+  const char *ts_start_help; /**< @brief ts start index number help description.  */
+  int ts_end_arg;	/**< @brief ts start index number (default='-1').  */
+  char * ts_end_orig;	/**< @brief ts start index number original value given at command line.  */
+  const char *ts_end_help; /**< @brief ts start index number help description.  */
   int m3u8_flag;	/**< @brief generate m3u8 file Flag with default 'off' (default=off).  */
   const char *m3u8_help; /**< @brief generate m3u8 file Flag with default 'off' help description.  */
   int ts_flag;	/**< @brief generate ts files Flag with default 'off' (default=off).  */
@@ -78,6 +84,8 @@ struct gengetopt_args_info
   unsigned int outpath_given ;	/**< @brief Whether outpath was given.  */
   unsigned int key_ID_start_given ;	/**< @brief Whether key_ID_start was given.  */
   unsigned int key_ID_end_given ;	/**< @brief Whether key_ID_end was given.  */
+  unsigned int ts_start_given ;	/**< @brief Whether ts_start was given.  */
+  unsigned int ts_end_given ;	/**< @brief Whether ts_end was given.  */
   unsigned int m3u8_given ;	/**< @brief Whether m3u8 was given.  */
   unsigned int ts_given ;	/**< @brief Whether ts was given.  */
   unsigned int audio_cc_given ;	/**< @brief Whether audio_cc was given.  */
