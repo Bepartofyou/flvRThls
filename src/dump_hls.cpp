@@ -131,7 +131,7 @@ static std::string get_ts_name(flv_parser * parser){
 	//sprintf(conunt, "%.4u", parser->stream->hlsconfig.ts_count + parser->key_ID_start / parser->stream->hlsconfig.hls_segment_num);
 	std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(parser->stream->outpath)) + "-key-" +
 		num2str(parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start > 0 ? parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start - 1 : 0) +
-		"-sum-" + num2str(parser->stream->keyframePos.size()) +
+		"-sum-" + num2str(parser->stream->keyframePos.size()) + "-seg-" + num2str(parser->segment_num) +
 		"-ac-" + num2str(parser->hlsmodule->ctx.audio_cc) + "-vc-" + num2str(parser->hlsmodule->ctx.video_cc) +
 		"-base-" + num2str(parser->hlsmodule->ctx.aframe_base) + "-pts-" + num2str(parser->hlsmodule->ctx.aframe_pts) +
 		+ "-" + std::string(conunt) + ".ts";
@@ -147,7 +147,7 @@ static std::string get_ts_name_ex(flv_parser * parser){
 
 	std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(".")) + "-key-" +
 		num2str(parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start > 0 ? parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start - 1 : 0) +
-		"-sum-" + num2str(parser->stream->keyframePos.size()) +
+		"-sum-" + num2str(parser->stream->keyframePos.size()) + "-seg-" + num2str(parser->segment_num) +
 		"-ac-" + num2str(parser->hlsmodule->ctx.audio_cc) + "-vc-" + num2str(parser->hlsmodule->ctx.video_cc) +
 		"-base-" + num2str(parser->hlsmodule->ctx.aframe_base) + "-pts-" + num2str(parser->hlsmodule->ctx.aframe_pts) +
 		+"-" + std::string(conunt) + ".ts";

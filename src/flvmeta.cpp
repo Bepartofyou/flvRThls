@@ -91,6 +91,16 @@ int main(int argc, char ** argv) {
 		errcode = dump_flv_file(&options, &parser);
 		judge_segment_num(parser, info.segmengttime_arg);
 
+		//over write key_ID_start and key_ID_end
+		if (info.ts_start_arg != -1 && info.ts_end_arg != -1)
+		{
+			parser.key_ID_start = info.ts_start_arg * parser.segment_num;
+			parser.key_ID_end = (info.ts_end_arg + 1) * parser.segment_num;
+
+			options.keyframe_start_index = parser.key_ID_start;
+			options.keyframe_end_index = parser.key_ID_end;
+		}
+
 		errcode = fragment_flv_file(&options, &parser);
 		int xxx = 0;
 		}
