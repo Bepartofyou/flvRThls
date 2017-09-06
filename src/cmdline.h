@@ -48,6 +48,9 @@ struct gengetopt_args_info
   char * outpath_arg;	/**< @brief the output ts file path (default='./').  */
   char * outpath_orig;	/**< @brief the output ts file path original value given at command line.  */
   const char *outpath_help; /**< @brief the output ts file path help description.  */
+  char * domain_arg;	/**< @brief domain prefix for m3u8 (default='').  */
+  char * domain_orig;	/**< @brief domain prefix for m3u8 original value given at command line.  */
+  const char *domain_help; /**< @brief domain prefix for m3u8 help description.  */
   int key_ID_start_arg;	/**< @brief flv keyframe start index number, '0' means min index (default='0').  */
   char * key_ID_start_orig;	/**< @brief flv keyframe start index number, '0' means min index original value given at command line.  */
   const char *key_ID_start_help; /**< @brief flv keyframe start index number, '0' means min index help description.  */
@@ -82,6 +85,7 @@ struct gengetopt_args_info
   unsigned int flvfile_given ;	/**< @brief Whether flvfile was given.  */
   unsigned int segmengttime_given ;	/**< @brief Whether segmengttime was given.  */
   unsigned int outpath_given ;	/**< @brief Whether outpath was given.  */
+  unsigned int domain_given ;	/**< @brief Whether domain was given.  */
   unsigned int key_ID_start_given ;	/**< @brief Whether key_ID_start was given.  */
   unsigned int key_ID_end_given ;	/**< @brief Whether key_ID_end was given.  */
   unsigned int ts_start_given ;	/**< @brief Whether ts_start was given.  */
