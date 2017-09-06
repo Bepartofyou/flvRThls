@@ -1076,9 +1076,7 @@ int fragement_hls_file_ex(flv_parser * parser, const flvmeta_opts * options) {
 
 	//return flv_get_raw_av(parser, 0);
 	file_offset_t offset_start = options->keyframe_start_index > 0 ? parser->stream->keyframePos[options->keyframe_start_index] : 0;
-	//file_offset_t offset_end = options->keyframe_end_index > 0 ? parser->stream->keyframePos[options->keyframe_end_index] : UINT_MAX;
-	file_offset_t offset_end = options->keyframe_end_index > 0 ?
-		parser->stream->keyframePos[options->keyframe_end_index] : parser->stream->keyframePos[parser->stream->keyframePos.size() - 1];;
+	file_offset_t offset_end = options->keyframe_end_index > 0 ? parser->stream->keyframePos[options->keyframe_end_index] : UINT64_MAX;
 
 	return flv_get_raw_av(parser, offset_start, offset_end);
 }
