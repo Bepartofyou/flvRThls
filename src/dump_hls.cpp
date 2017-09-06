@@ -600,6 +600,16 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 
 			parser->stream->h264_header_count++;
 
+			if (parser->stream->hlsconfig.key_frame_count > 1 &&
+				(parser->stream->hlsconfig.key_frame_count - 1) % parser->stream->hlsconfig.hls_segment_num == 0)
+			{
+				parser->stream->hlsconfig.ts_fragment_id = parser->stream->hlsconfig.key_frame_count;
+				parser->stream->hlsconfig.ts_count++;
+				hls_segment_ex(parser);
+				parser->stream->hlsconfig.key_frame_current = parser->stream->hlsconfig.key_frame_count;
+				parser->stream->hlsconfig.hls_count++;
+			}
+
 			//if (parser->stream->h264 == NULL){
 			//	std::string h264_name = num2str(parser->stream->h264_header_count) + ".h264";
 			//	parser->stream->h264 = fopen(h264_name.c_str(), "wb");
@@ -704,10 +714,10 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 					}
 				}
 
-				if (parser->stream->hlsconfig.key_frame_count - 1 >= 600 && parser->stream->hlsconfig.key_frame_count - 1 < 606)
-				{
-					int x = 0;
-				}
+				//if (parser->stream->hlsconfig.key_frame_count - 1 >= 600 && parser->stream->hlsconfig.key_frame_count - 1 < 606)
+				//{
+				//	int x = 0;
+				//}
 				//if (parser->stream->hlsconfig.key_frame_count - 1 >= 600 && parser->stream->hlsconfig.key_frame_count - 1 < 606)
 				//{
 				//	parser->stream->h264 = fopen("seek.h264", "ab");
