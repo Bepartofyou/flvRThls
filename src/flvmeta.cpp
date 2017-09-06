@@ -18,7 +18,8 @@ static void judge_segment_num(flv_parser& parser, int segment){
 	//{
 	//	printf("%f\n", parser.stream->keyframeTs[i]);
 	//}
-	int segment_nub = ceil((double)segment * (double)vecSize / (double)(parser.stream->keyframeTs[vecSize - 1] - parser.stream->keyframeTs[0]));
+	double timespan = parser.stream->keyframeTs[vecSize - 1] - parser.stream->keyframeTs[0] > 1 ? parser.stream->keyframeTs[vecSize - 1] - parser.stream->keyframeTs[0] : 1;
+	int segment_nub = ceil((double)segment * (double)vecSize / (double)timespan);
 
 	parser.segment_num = segment_nub > 6 ? 6 : segment_nub;
 }
