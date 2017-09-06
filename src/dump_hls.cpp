@@ -31,6 +31,9 @@
 #ifdef WIN32
 #define sprintf	sprintf_s
 #endif
+#ifndef UINT64_MAX
+#define UINT64_MAX  0xffffffffffffffff
+#endif
 
 static std::string num2str(double i)
 {
