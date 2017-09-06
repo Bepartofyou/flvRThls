@@ -95,7 +95,8 @@ int main(int argc, char ** argv) {
 		if (info.ts_start_arg != -1 && info.ts_end_arg != -1)
 		{
 			parser.key_ID_start = info.ts_start_arg * parser.segment_num;
-			parser.key_ID_end = (info.ts_end_arg + 1) * parser.segment_num;
+			parser.key_ID_end =
+				(info.ts_end_arg + 1) * parser.segment_num < parser.stream->keyframePos.size() ? (info.ts_end_arg + 1) * parser.segment_num : -1;
 
 			options.keyframe_start_index = parser.key_ID_start;
 			options.keyframe_end_index = parser.key_ID_end;
