@@ -266,7 +266,8 @@ typedef struct __flv_parser {
 	//std::string ts_name;
 	int ts_start_flag;
 
-	int seek_flag;
+	int seek_flag1;
+	int seek_flag2;
 	int b_ts;
 	int b_m3u8;
 	int key_ID_start;

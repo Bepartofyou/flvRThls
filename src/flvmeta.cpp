@@ -76,7 +76,8 @@ int main(int argc, char ** argv) {
 	parser.hlsmodule->ctx.aframe_base = info.aframe_base_arg;
 	parser.hlsmodule->ctx.aframe_pts = info.aframe_pts_arg;
 
-	parser.seek_flag = 0;
+	parser.seek_flag1 = 0;
+	parser.seek_flag2 = 0;
 	parser.ts_start_flag = 0;
 	parser.b_m3u8 = info.m3u8_flag;
 	parser.b_ts = info.ts_flag;

@@ -127,7 +127,7 @@ static std::string get_ts_name(flv_parser * parser){
 	//std::string strfile = get_flv_key(std::string(parser->stream->flvname),std::string(parser->stream->outpath)) + "-keyframeID-" +
 	//	num2str(parser->stream->hlsconfig.key_frame_current + parser->key_ID_start > 0 ? parser->stream->hlsconfig.key_frame_current + parser->key_ID_start - 1 : 0) 
 	//	+ "-" + std::string(conunt) + ".ts\n";
-	if (parser->key_ID_start != 0)
+	if (parser->key_ID_start != 0 && !parser->seek_flag2)
 	{
 		sprintf(conunt, "%.4u", parser->stream->hlsconfig.ts_count-1 + parser->key_ID_start / parser->stream->hlsconfig.hls_segment_num);
 	}
@@ -137,9 +137,9 @@ static std::string get_ts_name(flv_parser * parser){
 	}
 
 	uint32_t keyid;
-	if (parser->seek_flag){
+	if (parser->seek_flag1){
 		keyid = parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start;
-		parser->seek_flag = 0;
+		parser->seek_flag1 = 0;
 	}
 	else
 		keyid = parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start > 0 ? parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start - 1 : 0;
@@ -605,8 +605,10 @@ static int hls_on_video_tag_ex(flv_tag * tag, flv_video_tag vt, flv_parser * par
 		if (type == FLV_AVC_PACKET_TYPE_SEQUENCE_HEADER) {
 
 			//seek后的第一个key为avcC
-			if (parser->key_ID_start != 0 && parser->stream->hlsconfig.key_frame_count == 0)
-				parser->seek_flag = 1;
+			if (parser->key_ID_start != 0 && parser->stream->hlsconfig.key_frame_count == 0){
+				parser->seek_flag1 = 1;
+				parser->seek_flag2 = 1;
+			}
 
 			parser->stream->hlsconfig.key_frame_count++;
 			printf("1111111111111111111\n");
