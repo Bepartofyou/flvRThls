@@ -224,6 +224,7 @@ typedef struct __flv_stream {
 	char flvname[500];
 	char outpath[500];
 	char domain[500];
+	char prefix[500];
 	//std::string flvname;
     FILE * flvin;
     uint8 state;
@@ -290,7 +291,7 @@ typedef struct __flv_parser {
 } flv_parser;
 
 int flv_parse(const char * file, flv_parser * parser, file_offset_t offset);
-int flv_parse_av_config(const char * file, const char * outpath, const char * domain, flv_parser * parser, file_offset_t offset);
+int flv_parse_av_config(const char * file, const char * outpath, const char * domain, const char * prefix, flv_parser * parser, file_offset_t offset);
 int flv_get_raw_av(flv_parser * parser, file_offset_t offset_s, file_offset_t offset_e);
 
 #ifdef __cplusplus

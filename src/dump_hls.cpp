@@ -144,8 +144,10 @@ static std::string get_ts_name(flv_parser * parser){
 	else
 		keyid = parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start > 0 ? parser->stream->hlsconfig.ts_fragment_id + parser->key_ID_start - 1 : 0;
 
+	std::string strprefix = strcmp(parser->stream->prefix, "") ? "-prefix-" + std::string(parser->stream->prefix) : "";
 	//sprintf(conunt, "%.4u", parser->stream->hlsconfig.ts_count + parser->key_ID_start / parser->stream->hlsconfig.hls_segment_num);
 	std::string strfile = get_flv_key(std::string(parser->stream->flvname), std::string(parser->stream->outpath)) + 
+		strprefix +
 		"-key-" + num2str(keyid) +
 		"-sum-" + num2str(parser->stream->keyframePos.size()) + "-seg-" + num2str(parser->segment_num) +
 		"-ac-" + num2str(parser->hlsmodule->ctx.audio_cc) + "-vc-" + num2str(parser->hlsmodule->ctx.video_cc) +
@@ -1080,7 +1082,7 @@ int dump_hls_file_ex(flv_parser * parser, const flvmeta_opts * options) {
 	parser->on_video_tag = hls_on_video_tag;
 	parser->on_metadata_tag = hls_on_metadata_tag;
 
-	return flv_parse_av_config(options->input_file, options->output_file, options->domain, parser, 0);
+	return flv_parse_av_config(options->input_file, options->output_file, options->domain,options->prefix, parser, 0);
 }
 
 int fragement_hls_file_ex(flv_parser * parser, const flvmeta_opts * options) {

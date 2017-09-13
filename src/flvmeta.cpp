@@ -66,6 +66,7 @@ int main(int argc, char ** argv) {
 	//options.input_file = argv[1];
 	options.output_file = info.outpath_arg;
 	options.domain = info.domain_arg;
+	options.prefix = info.random_arg;
 	options.dump_format = FLVMETA_FORMAT_HLS;
 	options.keyframe_start_index = info.key_ID_start_arg;
 	options.keyframe_end_index = info.key_ID_end_arg;

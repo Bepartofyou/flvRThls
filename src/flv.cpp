@@ -602,7 +602,7 @@ int flv_parse(const char * file, flv_parser * parser, file_offset_t offset) {
 
 
 /* FLV event based parser */
-int flv_parse_av_config(const char * file, const char * outpath, const char * domain, flv_parser * parser, file_offset_t offset) {
+int flv_parse_av_config(const char * file, const char * outpath, const char * domain, const char * prefix, flv_parser * parser, file_offset_t offset) {
 	flv_header header;
 	flv_tag tag;
 	flv_audio_tag at;
@@ -621,6 +621,7 @@ int flv_parse_av_config(const char * file, const char * outpath, const char * do
 	strcpy(parser->stream->flvname, file);
 	strcpy(parser->stream->outpath, outpath);
 	strcpy(parser->stream->domain, domain);
+	strcpy(parser->stream->prefix, prefix);
 	//parser->stream->flvname = parser->stream->flvname.substr(0, parser->stream->flvname.rfind(".flv"));
 
 	if (parser->stream == NULL) {
@@ -794,7 +795,7 @@ int flv_get_raw_av(flv_parser * parser, file_offset_t offset_s, file_offset_t of
 		}
 
 		int length = lfs_ftell(parser->stream->flvin);
-		if (offset_e <= lfs_ftell(parser->stream->flvin))
+		if ((uint64_t)offset_e <= (uint64_t)lfs_ftell(parser->stream->flvin))
 			break;
 	}
 
