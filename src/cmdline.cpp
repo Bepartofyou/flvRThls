@@ -37,6 +37,7 @@ const char *gengetopt_args_info_help[] = {
   "  -g, --segmengttime=INT  set segment time, unit: s   (default=`5')",
   "  -o, --outpath=STRING    the output ts file path  (default=`./')",
   "  -d, --domain=STRING     domain prefix for m3u8  (default=`')",
+  "  -r, --random=STRING     random prefix for ts files  (default=`')",
   "  -s, --key_ID_start=INT  flv keyframe start index number, '0' means min index  \n                            (default=`0')",
   "  -e, --key_ID_end=INT    flv keyframe end index number, '-1' means max index  \n                            (default=`-1')",
   "  -x, --ts_start=INT      ts start index number  (default=`-1')",
@@ -80,6 +81,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->segmengttime_given = 0 ;
   args_info->outpath_given = 0 ;
   args_info->domain_given = 0 ;
+  args_info->random_given = 0 ;
   args_info->key_ID_start_given = 0 ;
   args_info->key_ID_end_given = 0 ;
   args_info->ts_start_given = 0 ;
@@ -104,6 +106,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->outpath_orig = NULL;
   args_info->domain_arg = gengetopt_strdup ("");
   args_info->domain_orig = NULL;
+  args_info->random_arg = gengetopt_strdup ("");
+  args_info->random_orig = NULL;
   args_info->key_ID_start_arg = 0;
   args_info->key_ID_start_orig = NULL;
   args_info->key_ID_end_arg = -1;
@@ -136,16 +140,17 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->segmengttime_help = gengetopt_args_info_help[3] ;
   args_info->outpath_help = gengetopt_args_info_help[4] ;
   args_info->domain_help = gengetopt_args_info_help[5] ;
-  args_info->key_ID_start_help = gengetopt_args_info_help[6] ;
-  args_info->key_ID_end_help = gengetopt_args_info_help[7] ;
-  args_info->ts_start_help = gengetopt_args_info_help[8] ;
-  args_info->ts_end_help = gengetopt_args_info_help[9] ;
-  args_info->m3u8_help = gengetopt_args_info_help[10] ;
-  args_info->ts_help = gengetopt_args_info_help[11] ;
-  args_info->audio_cc_help = gengetopt_args_info_help[12] ;
-  args_info->video_cc_help = gengetopt_args_info_help[13] ;
-  args_info->aframe_base_help = gengetopt_args_info_help[14] ;
-  args_info->aframe_pts_help = gengetopt_args_info_help[15] ;
+  args_info->random_help = gengetopt_args_info_help[6] ;
+  args_info->key_ID_start_help = gengetopt_args_info_help[7] ;
+  args_info->key_ID_end_help = gengetopt_args_info_help[8] ;
+  args_info->ts_start_help = gengetopt_args_info_help[9] ;
+  args_info->ts_end_help = gengetopt_args_info_help[10] ;
+  args_info->m3u8_help = gengetopt_args_info_help[11] ;
+  args_info->ts_help = gengetopt_args_info_help[12] ;
+  args_info->audio_cc_help = gengetopt_args_info_help[13] ;
+  args_info->video_cc_help = gengetopt_args_info_help[14] ;
+  args_info->aframe_base_help = gengetopt_args_info_help[15] ;
+  args_info->aframe_pts_help = gengetopt_args_info_help[16] ;
   
 }
 
@@ -233,6 +238,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->outpath_orig));
   free_string_field (&(args_info->domain_arg));
   free_string_field (&(args_info->domain_orig));
+  free_string_field (&(args_info->random_arg));
+  free_string_field (&(args_info->random_orig));
   free_string_field (&(args_info->key_ID_start_orig));
   free_string_field (&(args_info->key_ID_end_orig));
   free_string_field (&(args_info->ts_start_orig));
@@ -283,6 +290,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "outpath", args_info->outpath_orig, 0);
   if (args_info->domain_given)
     write_into_file(outfile, "domain", args_info->domain_orig, 0);
+  if (args_info->random_given)
+    write_into_file(outfile, "random", args_info->random_orig, 0);
   if (args_info->key_ID_start_given)
     write_into_file(outfile, "key_ID_start", args_info->key_ID_start_orig, 0);
   if (args_info->key_ID_end_given)
@@ -1188,6 +1197,7 @@ cmdline_parser_internal (
         { "segmengttime",	1, NULL, 'g' },
         { "outpath",	1, NULL, 'o' },
         { "domain",	1, NULL, 'd' },
+        { "random",	1, NULL, 'r' },
         { "key_ID_start",	1, NULL, 's' },
         { "key_ID_end",	1, NULL, 'e' },
         { "ts_start",	1, NULL, 'x' },
@@ -1206,7 +1216,7 @@ cmdline_parser_internal (
       custom_opterr = opterr;
       custom_optopt = optopt;
 
-      c = custom_getopt_long (argc, argv, "hVf:g:o:d:s:e:x:y:mta:v:b:p:", long_options, &option_index);
+      c = custom_getopt_long (argc, argv, "hVf:g:o:d:r:s:e:x:y:mta:v:b:p:", long_options, &option_index);
 
       optarg = custom_optarg;
       optind = custom_optind;
@@ -1271,6 +1281,18 @@ cmdline_parser_internal (
               &(local_args_info.domain_given), optarg, 0, "", ARG_STRING,
               check_ambiguity, override, 0, 0,
               "domain", 'd',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'r':	/* random prefix for ts files.  */
+        
+        
+          if (update_arg( (void *)&(args_info->random_arg), 
+               &(args_info->random_orig), &(args_info->random_given),
+              &(local_args_info.random_given), optarg, 0, "", ARG_STRING,
+              check_ambiguity, override, 0, 0,
+              "random", 'r',
               additional_error))
             goto failure;
         
